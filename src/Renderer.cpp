@@ -2,121 +2,203 @@
 
 Renderer::Renderer()
 {
-	VBO = 0;
-	VAO = 0;
-	EBO = 0;
-	shaderID = 0;
+	objShaderID = 0;
+	lightShaderID = 0;
 }
-void Renderer::AddCube(float pX, float pY, float pZ)
+int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 0 if obj and 1 if light
 {
+	//create new object to later add data then put it in vector
+	Object c;
 	float posX = pX;
 	float posY = pY;
 	float posZ = pZ;
-	
-	indices.reserve(36);
+	//populates vertices and indices o
+	c.indices.reserve(36);
 	for (int f = 0; f < 24; f += 4)
 	{
-		indices.push_back(verts.size() * 3 + 0 + f);
-		indices.push_back(verts.size() * 3 + 1 + f);
-		indices.push_back(verts.size() * 3 + 2 + f);
-		indices.push_back(verts.size() * 3 + 2 + f);
-		indices.push_back(verts.size() * 3 + 3 + f);
-		indices.push_back(verts.size() * 3 + 0 + f);
+		c.indices.push_back(c.verts.size() + 0 + f);
+		c.indices.push_back(c.verts.size() + 1 + f);
+		c.indices.push_back(c.verts.size() + 2 + f);
+		c.indices.push_back(c.verts.size() + 2 + f);
+		c.indices.push_back(c.verts.size() + 3 + f);
+		c.indices.push_back(c.verts.size() + 0 + f);
 	}
-	verts.reserve(24);
+	c.verts.reserve(24);
 	//                pos       uv
 	//front face
-	verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
 	//right face
-	verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
 	//left face
-	verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
 	//top face
-	verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
 	//back face
-	verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
 	//bottom face
-	verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
+	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
+	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	//adds object to renderer's list of all objects/lights depending on which will later get bufferIDs and be drawn
+	if (t == LIGHT)
+	{
+		lights.push_back(c);
+		return lights.size() - 1;
+	}
+	else if (t == OBJECT)
+	{
+		objects.push_back(c);
+		return objects.size() - 1;
+	}
 }
-void Renderer::initialize()
+void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
 {
-	this->CompileShaders("VertexShader.vert", "FragmentShader.frag");
-	this->ActivateShader();
-	//generates the vbo
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * verts.size(), verts.data(), GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	//generates ebo
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
-
-	//generates the vao
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	if (t == OBJECT)
+	{
+		objects[index].model = mod;
+	}
+	else if (t == LIGHT)
+	{
+		lights[index].model = mod;
+	}
 }
-void Renderer::CompileShaders(const char* vertexFile, const char* fragmentFile)
+void Renderer::initialize()//creates buffers in all objects and lights
 {
-	std::string vertexCode = get_file_contents(vertexFile);
-	std::string fragmentCode = get_file_contents(fragmentFile);
+	for (Object& o : objects)
+	{
+		//generates the vao
+		glGenVertexArrays(1, &o.VAO);
+		glBindVertexArray(o.VAO);
+		//generates the vbo
+		glGenBuffers(1, &o.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, o.VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * o.verts.size(), o.verts.data(), GL_STATIC_DRAW);
 
-	const char* vertexSource = vertexCode.c_str();
-	const char* fragmentSource = fragmentCode.c_str();
+		//generates ebo
+		glGenBuffers(1, &o.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, o.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * o.indices.size(), o.indices.data(), GL_STATIC_DRAW);
+
+		//sets attribute pointers
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+	}
+	int counter = 0;
+	for (Object& l : lights)
+	{
+		//generates the vao
+		glGenVertexArrays(1, &l.VAO);
+		glBindVertexArray(l.VAO);
+		//generates the vbo
+		glGenBuffers(1, &l.VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * l.verts.size(), l.verts.data(), GL_STATIC_DRAW);
+
+		//generates ebo
+		glGenBuffers(1, &l.EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * l.indices.size(), l.indices.data(), GL_STATIC_DRAW);
+
+		//sets attribute pointers
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+	}
+}
+void Renderer::CompileShaders()
+{
+	//for object shaders
+	const char* vertexFileO = "objVertexShader.vert";
+	const char* fragmentFileO = "objFragmentShader.frag";
+
+	std::string vertexCodeO = get_file_contents(vertexFileO);
+	std::string fragmentCodeO = get_file_contents(fragmentFileO);
+	//std::cout << vertexCodeO << "ov\n\n\n\n\n";
+	//std::cout << fragmentCodeO << "of\n\n\n\n\n";
+
+	const char* vertexSourceO = vertexCodeO.c_str();
+	const char* fragmentSourceO = fragmentCodeO.c_str();
 
 	//Compiles sourcecode and creates vertex shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexSource, NULL);
-	glCompileShader(vertexShader);
-	ShaderErrors(vertexShader, "VERTEX");
+	GLuint vertexShaderO = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShaderO, 1, &vertexSourceO, NULL);
+	glCompileShader(vertexShaderO);
+	ShaderErrors(vertexShaderO, "VERTEX");
 	//Same thing as above for fragment shader
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-	glCompileShader(fragmentShader);
-	ShaderErrors(fragmentShader, "FRAGMENT");
+	GLuint fragmentShaderO = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShaderO, 1, &fragmentSourceO, NULL);
+	glCompileShader(fragmentShaderO);
+	ShaderErrors(fragmentShaderO, "FRAGMENT");
 
 	//Creates the shader program(only one type of program)
-	shaderID = glCreateProgram();
+	objShaderID = glCreateProgram();
 
 	//Attaches both shaders to shader program and links program
-	glAttachShader(shaderID, vertexShader);
-	glAttachShader(shaderID, fragmentShader);
-	glLinkProgram(shaderID);
-	ShaderErrors(shaderID, "PROGRAM");
+	glAttachShader(objShaderID, vertexShaderO);
+	glAttachShader(objShaderID, fragmentShaderO);
+	glLinkProgram(objShaderID);
+	ShaderErrors(objShaderID, "PROGRAM");
+
 	//Deletes shaders after they are linked
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-}
-void Renderer::ActivateShader()
-{
-	glUseProgram(shaderID);
-}
-void Renderer::DeleteShader()
-{
-	glDeleteProgram(shaderID);
+	glDeleteShader(vertexShaderO);
+	glDeleteShader(fragmentShaderO);
+	//std::cout << "object shaders compile and work\n";
+	
+	//for light shaders
+	const char* vertexFileL = "litVertexShader.vert";
+	const char* fragmentFileL = "litFragmentShader.frag";
+
+	std::string vertexCodeL = get_file_contents(vertexFileL);
+	std::string fragmentCodeL = get_file_contents(fragmentFileL);
+	//std::cout << vertexCodeL << "lv\n\n\n\n\n";
+	//std::cout << fragmentCodeL << "lf\n\n\n\n\n";
+
+	const char* vertexSourceL = vertexCodeL.c_str();
+	const char* fragmentSourceL = fragmentCodeL.c_str();
+
+	//Compiles sourcecode and creates vertex shader
+	GLuint vertexShaderL = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShaderL, 1, &vertexSourceL, NULL);
+	glCompileShader(vertexShaderL);
+	ShaderErrors(vertexShaderL, "VERTEX");
+	//Same thing as above for fragment shader
+	GLuint fragmentShaderL = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShaderL, 1, &fragmentSourceL, NULL);
+	glCompileShader(fragmentShaderL);
+	ShaderErrors(fragmentShaderL, "FRAGMENT");
+
+	//Creates the shader program(only one type of program)
+	lightShaderID = glCreateProgram();
+
+	//Attaches both shaders to shader program and links program
+	glAttachShader(lightShaderID, vertexShaderL);
+	glAttachShader(lightShaderID, fragmentShaderL);
+	glLinkProgram(lightShaderID);
+	ShaderErrors(lightShaderID, "PROGRAM");
+
+	//Deletes shaders after they are linked
+	glDeleteShader(vertexShaderO);
+	glDeleteShader(fragmentShaderO);
+	//std::cout << "light shaders compile and work\n";
 }
 void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 {
@@ -141,29 +223,65 @@ void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 		}
 	}
 }
-void Renderer::sendPVMUniforms(glm::mat4 proj, glm::mat4 view, glm::mat4 model)
-{
-	int modelLoc = glGetUniformLocation(shaderID, "m");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-	int viewLoc = glGetUniformLocation(shaderID, "v");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-	int projLoc = glGetUniformLocation(shaderID, "p");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-}
-void Renderer::Draw()
+void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
 {
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);//may only need to call vao bind but unsure
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	//iterates through objects and sends model mat4 + draws them
+	glUseProgram(objShaderID);
+	int viewLocO = glGetUniformLocation(objShaderID, "v");
+	glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(view));
+
+	int projLocO = glGetUniformLocation(objShaderID, "p");
+	glUniformMatrix4fv(projLocO, 1, GL_FALSE, glm::value_ptr(proj));
+
+	int modelLocO = glGetUniformLocation(objShaderID, "m");
+	for (Object& o : objects)
+	{
+		//send model matrix
+		glUniformMatrix4fv(modelLocO, 1, GL_FALSE, glm::value_ptr(o.model));
+
+		glBindVertexArray(o.VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, o.VBO);//may only need to call vao bind but unsure
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, o.EBO);
+		glDrawElements(GL_TRIANGLES, o.indices.size(), GL_UNSIGNED_INT, 0);
+	}
+	//same but for light objects
+	glUseProgram(lightShaderID);
+	int viewLocL = glGetUniformLocation(lightShaderID, "v");
+	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
+
+	int projLocL = glGetUniformLocation(lightShaderID, "p");
+	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
+
+	int modelLocL = glGetUniformLocation(lightShaderID, "m");
+	for (Object& l : lights)
+	{
+		glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(l.model));
+
+		glBindVertexArray(l.VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);//may only need to call vao bind but unsure
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
+		glDrawElements(GL_TRIANGLES, l.indices.size(), GL_UNSIGNED_INT, 0);
+	}
 }
 Renderer::~Renderer()
 {
-	glDeleteBuffers(1, &VBO);
-	glDeleteBuffers(1, &EBO);
-	glDeleteVertexArrays(1, &VAO);
+	//goes through all objects and deletes them
+	glUseProgram(0);
+	for (Object& o : objects)
+	{
+		glDeleteBuffers(1, &o.VBO);
+		glDeleteBuffers(1, &o.EBO);
+		glDeleteVertexArrays(1, &o.VAO);
+	}
+	glDeleteProgram(objShaderID);
+	for (Object& l : lights)
+	{
+		glDeleteBuffers(1, &l.VBO);
+		glDeleteBuffers(1, &l.EBO);
+		glDeleteVertexArrays(1, &l.VAO);
+	}
+	glDeleteProgram(lightShaderID);
 }
 //function to read glsl shader files
 std::string get_file_contents(const char* filename)
@@ -187,6 +305,6 @@ std::string get_file_contents(const char* filename)
 			return "not found";
 		}
 	}
-	std::cout << "failed that way\n";
+	std::cout << "could not find shader at file\n";
 	return "not found";
 }

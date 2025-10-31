@@ -22,25 +22,35 @@ struct Vertex
 	float UVX;
 	float UVY;
 };
+struct Object
+{
+	std::vector<Vertex> verts;
+	std::vector<GLuint> indices;
+	glm::mat4 model = glm::mat4(1.0f);
+	GLuint VBO = 0;
+	GLuint VAO = 0;
+	GLuint EBO = 0;
+};
+enum obj
+{
+	OBJECT,
+	LIGHT,
+};
 std::string get_file_contents(const char* filename);//reads shader text file
 class Renderer
 {
 	public:
 		Renderer();
-		void AddCube(float pX, float pY, float pZ);
+		int AddCube(float pX, float pY, float pZ, obj t);//returns index of where cube is
+		void SetCubeModelMat(int index, glm::mat4 mod, obj t);
 		void initialize();
-		void CompileShaders(const char* vertexFile, const char* fragmentFile);
-		void ActivateShader();
-		void DeleteShader();
+		void CompileShaders();
 		void ShaderErrors(unsigned int shader, const  char* type);
-		void sendPVMUniforms(glm::mat4 proj, glm::mat4 view, glm::mat4 model);
-		void Draw();
+		void Draw(glm::mat4 proj, glm::mat4 view);//also sends uniforms of PV while model is stored in object
 		~Renderer();
-		std::vector<Vertex> verts;
-		std::vector<GLuint> indices;
-		GLuint VBO;
-		GLuint VAO;
-		GLuint EBO;
-		GLuint shaderID;
+		std::vector<Object> objects;
+		std::vector<Object> lights;
+		GLuint objShaderID;
+		GLuint lightShaderID;
 };
 #endif

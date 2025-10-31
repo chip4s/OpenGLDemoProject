@@ -48,8 +48,8 @@ Application::Application() : input(window)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
-	//enables
-
+	//enables depth testing
+	glEnable(GL_DEPTH_TEST);
 }
 void Application::run()
 {
@@ -59,25 +59,30 @@ void Application::run()
 	glm::mat4 view = glm::mat4(1.0f);
 
 	glm::mat4 proj = glm::mat4(1.0f);
-	renderer.ActivateShader();
-	renderer.AddCube(-0.5f,-0.5,-0.5f);
+	int GO = renderer.AddCube(-0.5f,-0.5,-0.5f, OBJECT);
+	int GL = renderer.AddCube(-0.5f, 2.5f, 2.5f, LIGHT);
+	renderer.CompileShaders();//could move the call to initialize
 	renderer.initialize();
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.6f, 0.6f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		renderer.ActivateShader();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//activate shader before SENDING the uniforms
 
 		//3d matrices
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 100.0f);
 		view = glm::lookAt(input.cam.cameraPos, input.cam.cameraPos + input.cam.cameraFront, input.cam.cameraUp);
-		model = glm::mat4(1.0f);//redundant rn but how I can change transforms of objects
-		
-		renderer.sendPVMUniforms(proj, view, model);
+
+		model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));//redundant rn but how I can change transforms of objects
+
+		renderer.SetCubeModelMat(GL, model, LIGHT);
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);
-		renderer.Draw();
+
+		//draws and takes pv Uniforms
+		renderer.Draw(proj, view);
+
 		this->CalculateDeltaTime();
 
 		glfwSwapBuffers(window);
