@@ -9,57 +9,56 @@ int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 
 {
 	//create new object to later add data then put it in vector
 	Object c;
-	float posX = pX;
-	float posY = pY;
-	float posZ = pZ;
+
+	c.model = glm::translate(glm::mat4(1.0f), glm::vec3(pX, pY, pZ));
 	//populates vertices and indices o
 	c.indices.reserve(36);
 	for (int f = 0; f < 24; f += 4)
 	{
-		c.indices.push_back(c.verts.size() + 0 + f);
-		c.indices.push_back(c.verts.size() + 1 + f);
-		c.indices.push_back(c.verts.size() + 2 + f);
-		c.indices.push_back(c.verts.size() + 2 + f);
-		c.indices.push_back(c.verts.size() + 3 + f);
-		c.indices.push_back(c.verts.size() + 0 + f);
+		c.indices.push_back(0 + f);
+		c.indices.push_back(1 + f);
+		c.indices.push_back(2 + f);
+		c.indices.push_back(2 + f);
+		c.indices.push_back(3 + f);
+		c.indices.push_back(0 + f);
 	}
 	c.verts.reserve(24);
-	//                pos       uv
+	//                       pos               normal
 	//front face
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({-0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
+	c.verts.push_back({-0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
+	c.verts.push_back({0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
+	c.verts.push_back({0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
 	//right face
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f});
+	c.verts.push_back({0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f});
+	c.verts.push_back({0.5f, 0.5f, -0.5f,  1.0f, 0.0f, 0.0f});
+	c.verts.push_back({0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f});
 	//left face
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f});
+	c.verts.push_back({-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f});
+	c.verts.push_back({-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f});
+	c.verts.push_back({-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f});
 	//top face
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 0.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 0.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({-0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f});
+	c.verts.push_back({-0.5f, 0.5f, -0.5f,  0.0f, 1.0f, 0.0f});
+	c.verts.push_back({0.5f, 0.5f, -0.5f,  0.0f, 1.0f, 0.0f});
+	c.verts.push_back({0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f});
 	//back face
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({1.0f + posX, 1.0f + posY, 1.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({0.0f + posX, 1.0f + posY, 1.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
+	c.verts.push_back({0.5f, 0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
+	c.verts.push_back({-0.5f, 0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
+	c.verts.push_back({-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
 	//bottom face
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 1.0f + posZ,  0.0f, 0.0f });
-	c.verts.push_back({0.0f + posX, 0.0f + posY, 0.0f + posZ,  0.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 0.0f + posZ,  1.0f, 1.0f });
-	c.verts.push_back({1.0f + posX, 0.0f + posY, 1.0f + posZ,  1.0f, 0.0f });
+	c.verts.push_back({-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f});
+	c.verts.push_back({-0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f});
+	c.verts.push_back({0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f});
+	c.verts.push_back({0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f});
 	//adds object to renderer's list of all objects/lights depending on which will later get bufferIDs and be drawn
 	if (t == LIGHT)
 	{
 		lights.push_back(c);
-		return lights.size() - 1;
+		return lights.size() - 1;//returns index into where the object is for later reference
 	}
 	else if (t == OBJECT)
 	{
@@ -71,12 +70,24 @@ void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
 {
 	if (t == OBJECT)
 	{
-		objects[index].model = mod;
+		objects[index].model = objects[index].model * mod;
 	}
 	else if (t == LIGHT)
 	{
-		lights[index].model = mod;
+		lights[index].model = lights[index].model * mod;
 	}
+}
+//sends light position uniform to obj frag shader for lighting
+void Renderer::HandleLighting(glm::vec3 camPos)//right now only supports one light
+{
+	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
+	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+
+	int lightPosLoc = glGetUniformLocation(objShaderID, "lightPos");
+	float lightPosX = lights[0].model[3][0];
+	float lightPosY = lights[0].model[3][1];
+	float lightPosZ = lights[0].model[3][2];
+	glUniform3f(lightPosLoc, lightPosX, lightPosY, lightPosZ);//light pos is first vert pos
 }
 void Renderer::initialize()//creates buffers in all objects and lights
 {
@@ -96,9 +107,9 @@ void Renderer::initialize()//creates buffers in all objects and lights
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * o.indices.size(), o.indices.data(), GL_STATIC_DRAW);
 
 		//sets attribute pointers
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 	}
 	int counter = 0;
@@ -118,9 +129,9 @@ void Renderer::initialize()//creates buffers in all objects and lights
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * l.indices.size(), l.indices.data(), GL_STATIC_DRAW);
 
 		//sets attribute pointers
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 	}
 }
@@ -226,7 +237,26 @@ void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 
 void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
 {
-	//iterates through objects and sends model mat4 + draws them
+	//iterates through lights and sends model mat4 + draws them
+	glUseProgram(lightShaderID);
+	int viewLocL = glGetUniformLocation(lightShaderID, "v");
+	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
+
+	int projLocL = glGetUniformLocation(lightShaderID, "p");
+	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
+
+	int modelLocL = glGetUniformLocation(lightShaderID, "m");
+	for (Object& l : lights)
+	{
+		glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(l.model));
+
+		glBindVertexArray(l.VAO);
+		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);//may only need to call vao bind but unsure
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
+		glDrawElements(GL_TRIANGLES, l.indices.size(), GL_UNSIGNED_INT, 0);
+	}
+
+	//same for regular objects
 	glUseProgram(objShaderID);
 	int viewLocO = glGetUniformLocation(objShaderID, "v");
 	glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(view));
@@ -244,24 +274,6 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
 		glBindBuffer(GL_ARRAY_BUFFER, o.VBO);//may only need to call vao bind but unsure
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, o.EBO);
 		glDrawElements(GL_TRIANGLES, o.indices.size(), GL_UNSIGNED_INT, 0);
-	}
-	//same but for light objects
-	glUseProgram(lightShaderID);
-	int viewLocL = glGetUniformLocation(lightShaderID, "v");
-	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
-
-	int projLocL = glGetUniformLocation(lightShaderID, "p");
-	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
-
-	int modelLocL = glGetUniformLocation(lightShaderID, "m");
-	for (Object& l : lights)
-	{
-		glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(l.model));
-
-		glBindVertexArray(l.VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);//may only need to call vao bind but unsure
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
-		glDrawElements(GL_TRIANGLES, l.indices.size(), GL_UNSIGNED_INT, 0);
 	}
 }
 Renderer::~Renderer()

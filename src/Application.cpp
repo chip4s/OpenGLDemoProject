@@ -46,36 +46,69 @@ Application::Application() : input(window)
 
 	//enables face culling
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	glCullFace(GL_FRONT);
 	glFrontFace(GL_CCW);
+
 	//enables depth testing
 	glEnable(GL_DEPTH_TEST);
 }
 void Application::run()
 {
 	//shader uniform proto
-	glm::mat4 model = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(0,1,0));
+	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
+
+	glm::mat4 mObj = glm::mat4(1.0f);
 
 	glm::mat4 view = glm::mat4(1.0f);
 
 	glm::mat4 proj = glm::mat4(1.0f);
-	int GO = renderer.AddCube(-0.5f,-0.5,-0.5f, OBJECT);
-	int GL = renderer.AddCube(-0.5f, 2.5f, 2.5f, LIGHT);
+	int GO = renderer.AddCube(0.0f, 0.0f, 0.0f, OBJECT);
+	int GL = renderer.AddCube(0.0f, 0.0f, 1.0f, LIGHT);
 	renderer.CompileShaders();//could move the call to initialize
 	renderer.initialize();
+
+	renderer.SetCubeModelMat(GL, model, LIGHT);
+
 	while (!glfwWindowShouldClose(window))
 	{
-		glClearColor(0.6f, 0.6f, 1.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//activate shader before SENDING the uniforms
 
 		//3d matrices
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 100.0f);
-		view = glm::lookAt(input.cam.cameraPos, input.cam.cameraPos + input.cam.cameraFront, input.cam.cameraUp);
+		view = input.CreateViewMat();
 
-		model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));//redundant rn but how I can change transforms of objects
 
-		renderer.SetCubeModelMat(GL, model, LIGHT);
+		//mObj = glm::rotate(glm::mat4(1.0f), glm::radians(float(90.0f * deltaTime)), glm::vec3(1.0f, 1.0f, 0.0f));
+		renderer.SetCubeModelMat(GO, mObj, OBJECT);
+
+		glm::mat4 modelLight = glm::mat4(1.0f);
+		glm::vec3 moveLight = glm::vec3(0.0f, 0.0f, 0.0f);
+		if (input.inputs[GLFW_KEY_UP] == true)
+		{
+			moveLight.y += 0.1f;
+		}
+		if (input.inputs[GLFW_KEY_DOWN] == true)
+		{
+			moveLight.y += -0.1f;
+		}
+		if (input.inputs[GLFW_KEY_RIGHT] == true)
+		{
+			moveLight.x += 0.1f;
+		}
+		if (input.inputs[GLFW_KEY_LEFT] == true)
+		{
+			moveLight.x += -0.1f;
+		}
+
+		modelLight = glm::translate(glm::mat4(1.0f), moveLight);
+
+		renderer.SetCubeModelMat(GL, modelLight, LIGHT);
+
+
+		renderer.HandleLighting(input.cam.cameraPos);
+
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);

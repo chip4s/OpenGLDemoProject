@@ -19,8 +19,9 @@ struct Vertex
 	float posX;
 	float posY;
 	float posZ;
-	float UVX;
-	float UVY;
+	float normX;
+	float normY;
+	float normZ;
 };
 struct Object
 {
@@ -43,6 +44,7 @@ class Renderer
 		Renderer();
 		int AddCube(float pX, float pY, float pZ, obj t);//returns index of where cube is
 		void SetCubeModelMat(int index, glm::mat4 mod, obj t);
+		void HandleLighting(glm::vec3 camPos);
 		void initialize();
 		void CompileShaders();
 		void ShaderErrors(unsigned int shader, const  char* type);

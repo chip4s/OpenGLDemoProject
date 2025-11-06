@@ -19,7 +19,7 @@ void Input::key_Callback(GLFWwindow* window, int key, int scancode, int action, 
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        glCullFace(GL_FRONT);
         glFrontFace(GL_CCW);
 
     }
@@ -27,7 +27,7 @@ void Input::key_Callback(GLFWwindow* window, int key, int scancode, int action, 
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+        glCullFace(GL_FRONT);
         glFrontFace(GL_CCW);
     }
 }

@@ -1,6 +1,5 @@
 #version 430 core
 
-in vec3 afragColor;
 out vec4 FragColor;
 
 void main()
