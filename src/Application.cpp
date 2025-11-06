@@ -87,11 +87,11 @@ void Application::run()
 		glm::vec3 moveLight = glm::vec3(0.0f, 0.0f, 0.0f);
 		if (input.inputs[GLFW_KEY_UP] == true)
 		{
-			moveLight.y += 0.1f;
+			moveLight.z += 0.1f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN] == true)
 		{
-			moveLight.y += -0.1f;
+			moveLight.z += -0.1f;
 		}
 		if (input.inputs[GLFW_KEY_RIGHT] == true)
 		{
