@@ -55,19 +55,21 @@ Application::Application() : input(window)
 void Application::run()
 {
 	//shader uniform proto
-	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
-
-	glm::mat4 mObj = glm::mat4(1.0f);
-
 	glm::mat4 view = glm::mat4(1.0f);
 
 	glm::mat4 proj = glm::mat4(1.0f);
-	int GO = renderer.AddCube(0.0f, 0.0f, 0.0f, OBJECT);
-	int GL = renderer.AddCube(0.0f, 0.0f, 1.0f, LIGHT);
+	int GO = renderer.AddCube(1.5f, 0.0f, 0.0f, OBJECT);
+	int GL = renderer.AddCube(0.0f, 0.0f, 0.0f, POINT_LIGHT);
+	int GT = renderer.AddCube(0.0f, 0.0f, 0.0f, OBJECT);
+
+	renderer.AddPointLight(GL, 0.22f, 0.20f);
+
 	renderer.CompileShaders();//could move the call to initialize
 	renderer.initialize();
 
-	renderer.SetCubeModelMat(GL, model, LIGHT);
+
+	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
+	renderer.SetCubeModelMat(GL, model, POINT_LIGHT);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -80,18 +82,16 @@ void Application::run()
 		view = input.CreateViewMat();
 
 
-		//mObj = glm::rotate(glm::mat4(1.0f), glm::radians(float(90.0f * deltaTime)), glm::vec3(1.0f, 1.0f, 0.0f));
-		renderer.SetCubeModelMat(GO, mObj, OBJECT);
+		renderer.HandleLighting(input.cam.cameraPos);
 
-		glm::mat4 modelLight = glm::mat4(1.0f);
-		glm::vec3 moveLight = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 moveLight = glm::vec3(0.0f);
 		if (input.inputs[GLFW_KEY_UP] == true)
 		{
-			moveLight.z += 0.1f;
+			moveLight.z += -0.1f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN] == true)
 		{
-			moveLight.z += -0.1f;
+			moveLight.z += 0.1f;
 		}
 		if (input.inputs[GLFW_KEY_RIGHT] == true)
 		{
@@ -101,14 +101,8 @@ void Application::run()
 		{
 			moveLight.x += -0.1f;
 		}
-
-		modelLight = glm::translate(glm::mat4(1.0f), moveLight);
-
-		renderer.SetCubeModelMat(GL, modelLight, LIGHT);
-
-
-		renderer.HandleLighting(input.cam.cameraPos);
-
+		glm::mat4 tML = glm::translate(glm::mat4(1.0f), moveLight);
+		renderer.SetCubeModelMat(GL, tML, POINT_LIGHT);
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);

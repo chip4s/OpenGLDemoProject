@@ -55,10 +55,10 @@ int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 
 	c.verts.push_back({0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f});
 	c.verts.push_back({0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f});
 	//adds object to renderer's list of all objects/lights depending on which will later get bufferIDs and be drawn
-	if (t == LIGHT)
+	if (t > 0)
 	{
-		lights.push_back(c);
-		return lights.size() - 1;//returns index into where the object is for later reference
+		lightObjects.push_back(c);
+		return lightObjects.size() - 1;//returns index into where the object is for later reference
 	}
 	else if (t == OBJECT)
 	{
@@ -66,28 +66,41 @@ int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 
 		return objects.size() - 1;
 	}
 }
+void Renderer::AddPointLight(int objInd, float lin, float quad)
+{ 
+	PointLight p =
+	{
+		glm::vec3(lightObjects[objInd].model[3][0],lightObjects[objInd].model[3][1], lightObjects[objInd].model[3][2]),//pos of light obj which i need to update every frame
+		objInd,
+		1.0f,//constant for attenuation is always 1.0f(i think)
+		lin,
+		quad,
+	};
+	pointLights.push_back(p);
+}
 void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
 {
 	if (t == OBJECT)
 	{
 		objects[index].model = objects[index].model * mod;
 	}
-	else if (t == LIGHT)
+	else if (t > 0)
 	{
-		lights[index].model = lights[index].model * mod;
+		lightObjects[index].model = lightObjects[index].model * mod;
 	}
 }
 //sends light position uniform to obj frag shader for lighting
-void Renderer::HandleLighting(glm::vec3 camPos)//right now only supports one light
+void Renderer::HandleLighting(glm::vec3 camPos)//updates pointlight position and sends pointlight struct to frag shader (only one for now)
 {
 	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
 	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
 
 	int lightPosLoc = glGetUniformLocation(objShaderID, "lightPos");
-	float lightPosX = lights[0].model[3][0];
-	float lightPosY = lights[0].model[3][1];
-	float lightPosZ = lights[0].model[3][2];
-	glUniform3f(lightPosLoc, lightPosX, lightPosY, lightPosZ);//light pos is first vert pos
+
+	//updates position of pointlight with obj
+	pointLights[0].lightPos = glm::vec3(lightObjects[pointLights[0].objIndex].model[3][0], lightObjects[pointLights[0].objIndex].model[3][1], lightObjects[pointLights[0].objIndex].model[3][2]);
+
+	glUniform3fv(lightPosLoc, 1, glm::value_ptr(pointLights[0].lightPos));//light pos is first vert pos
 }
 void Renderer::initialize()//creates buffers in all objects and lights
 {
@@ -113,7 +126,7 @@ void Renderer::initialize()//creates buffers in all objects and lights
 		glEnableVertexAttribArray(1);
 	}
 	int counter = 0;
-	for (Object& l : lights)
+	for (Object& l : lightObjects)
 	{
 		//generates the vao
 		glGenVertexArrays(1, &l.VAO);
@@ -246,7 +259,7 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
 	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
 
 	int modelLocL = glGetUniformLocation(lightShaderID, "m");
-	for (Object& l : lights)
+	for (Object& l : lightObjects)
 	{
 		glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(l.model));
 
@@ -287,7 +300,7 @@ Renderer::~Renderer()
 		glDeleteVertexArrays(1, &o.VAO);
 	}
 	glDeleteProgram(objShaderID);
-	for (Object& l : lights)
+	for (Object& l : lightObjects)
 	{
 		glDeleteBuffers(1, &l.VBO);
 		glDeleteBuffers(1, &l.EBO);

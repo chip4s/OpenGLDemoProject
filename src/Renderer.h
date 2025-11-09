@@ -23,6 +23,21 @@ struct Vertex
 	float normY;
 	float normZ;
 };
+struct PointLight
+{
+	glm::vec3 lightPos;
+	int objIndex;//stores what object its following
+
+	//I do not think i need these
+	//glm::vec3 ambient;
+	//glm::vec3 diffuse;
+	//glm::vec3 specular;
+
+	//for attenuation
+	float constant;
+	float linear;
+	float quadratic;
+};
 struct Object
 {
 	std::vector<Vertex> verts;
@@ -32,10 +47,12 @@ struct Object
 	GLuint VAO = 0;
 	GLuint EBO = 0;
 };
-enum obj
+enum obj : char//determines type of object/light
 {
 	OBJECT,
-	LIGHT,
+	DIRECTIONAL_LIGHT,
+	POINT_LIGHT,
+	SPOT_LIGHT,
 };
 std::string get_file_contents(const char* filename);//reads shader text file
 class Renderer
@@ -51,7 +68,11 @@ class Renderer
 		void Draw(glm::mat4 proj, glm::mat4 view);//also sends uniforms of PV while model is stored in object
 		~Renderer();
 		std::vector<Object> objects;
-		std::vector<Object> lights;
+		std::vector<Object> lightObjects;// to render the actual lights without them being affected by lights
+
+		std::vector<PointLight> pointLights;
+		void AddPointLight(int objInd, float lin, float quad);//follows an light object which is by index, 2 vars for attenuation the constant is 1.0f
+
 		GLuint objShaderID;
 		GLuint lightShaderID;
 };
