@@ -26,9 +26,10 @@ struct Vertex
 struct PointLight
 {
 	glm::vec3 lightPos;
+	glm::vec3 lightColor;
 	int objIndex;//stores what object its following
 
-	//I do not think i need these
+	//I do not think I need these yet (to be added)
 	//glm::vec3 ambient;
 	//glm::vec3 diffuse;
 	//glm::vec3 specular;
@@ -37,6 +38,15 @@ struct PointLight
 	float constant;
 	float linear;
 	float quadratic;
+};
+struct DirectionalLight
+{
+	glm::vec3 lightDirection;
+
+	//I do not think I need these yet (to be added)
+	//glm::vec3 ambient;
+	//glm::vec3 diffuse;
+	//glm::vec3 specular;
 };
 struct Object
 {
@@ -61,7 +71,7 @@ class Renderer
 		Renderer();
 		int AddCube(float pX, float pY, float pZ, obj t);//returns index of where cube is
 		void SetCubeModelMat(int index, glm::mat4 mod, obj t);
-		void HandleLighting(glm::vec3 camPos);
+		void HandlePointLights(glm::vec3 camPos);
 		void initialize();
 		void CompileShaders();
 		void ShaderErrors(unsigned int shader, const  char* type);
@@ -72,6 +82,9 @@ class Renderer
 
 		std::vector<PointLight> pointLights;
 		void AddPointLight(int objInd, float lin, float quad);//follows an light object which is by index, 2 vars for attenuation the constant is 1.0f
+
+		std::vector<DirectionalLight> directionalLights;
+		void AddDirectionalLight(glm::vec3 dir);
 
 		GLuint objShaderID;
 		GLuint lightShaderID;
