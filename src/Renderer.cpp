@@ -5,7 +5,7 @@ Renderer::Renderer()
 	objShaderID = 0;
 	lightShaderID = 0;
 }
-int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 0 if obj and 1 if light
+int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 0 if obj and > 1 if light
 {
 	//create new object to later add data then put it in vector
 	Object c;
@@ -66,26 +66,18 @@ int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 
 		return objects.size() - 1;
 	}
 }
-void Renderer::AddPointLight(int objInd, float lin, float quad)
+void Renderer::AddPointLight(int objInd, glm::vec3 color,float lin, float quad)
 { 
 	PointLight p =
 	{
 		glm::vec3(lightObjects[objInd].model[3][0],lightObjects[objInd].model[3][1], lightObjects[objInd].model[3][2]),//pos of light obj which i need to update every frame
-		glm::vec3(1.0f, 1.0f, 1.0f),
+		color,
 		objInd,
 		1.0f,//constant for attenuation is always 1.0f(I think)
 		lin,
 		quad,
 	};
 	pointLights.push_back(p);
-}
-void Renderer::AddDirectionalLight(glm::vec3 dir)//not implemented as of now
-{
-	DirectionalLight d =
-	{
-		dir,
-	};
-	directionalLights.push_back(d);
 }
 void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
 {
@@ -99,55 +91,75 @@ void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
 	}
 }
 //sends light position uniform to obj frag shader for lighting
-void Renderer::HandlePointLights(glm::vec3 camPos)//updates pointlight position and sends pointlight struct to frag shader (only one for now)
+void Renderer::HandlePointLights(glm::vec3 camPos)//updates pointlight position and sends pointlight struct to frag shader
 {
 	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
 	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
 	
-	//std::vector<glm::vec3> lightPositions;
-	//std::vector<glm::vec3> lightColors;
-
-	//updates position of pointlight with obj
-	pointLights[0].lightPos = glm::vec3(lightObjects[pointLights[0].objIndex].model[3][0], lightObjects[pointLights[0].objIndex].model[3][1], lightObjects[pointLights[0].objIndex].model[3][2]);
-
-	//sends attenuation values per light
-	int AttenLinearLoc = glGetUniformLocation(objShaderID, "AttenLinear[0]");
-	int AttenQuadLoc = glGetUniformLocation(objShaderID, "AttenQuad[0]");
-
-	glUniform1f(AttenLinearLoc, pointLights[0].linear);
-	glUniform1f(AttenQuadLoc, pointLights[0].quadratic);
-
-	//sends light position
-	int LightPosLoc = glGetUniformLocation(objShaderID, "lightPositions[0]");
-
-	//sends light color
-	int LightColorLoc = glGetUniformLocation(objShaderID, "lightColors[0]");
-
-	glUniform3fv(LightPosLoc, 1, glm::value_ptr(pointLights[0].lightPos));
-
-	glUniform3fv(LightColorLoc, 1, glm::value_ptr(pointLights[0].lightColor));
+	int maxPointLightsLoc = glGetUniformLocation(objShaderID, "maxPointLights");
+	glUniform1i(maxPointLightsLoc, pointLights.size());
 
 
+	for (int i = 0; i < pointLights.size(); i++)
+	{
+		//updates position of pointlight with obj
+		pointLights[i].lightPos = glm::vec3(lightObjects[pointLights[i].objIndex].model[3][0], lightObjects[pointLights[i].objIndex].model[3][1], lightObjects[pointLights[i].objIndex].model[3][2]);
+
+		//sends attenuation values per light
+		std::string AttenLStr = "pointLights[" + std::to_string(i) + "].AttenLinear";
+		int AttenLinearLoc = glGetUniformLocation(objShaderID, AttenLStr.c_str());
+
+		std::string AttenQStr = "pointLights[" + std::to_string(i) + "].AttenQuad";
+		int AttenQuadLoc = glGetUniformLocation(objShaderID, AttenQStr.c_str());
+
+		glUniform1f(AttenLinearLoc, pointLights[i].linear);
+		glUniform1f(AttenQuadLoc, pointLights[i].quadratic);
+
+		//sends light position
+		std::string LightPStr = "pointLights[" + std::to_string(i) + "].lightPosition";
+		int LightPosLoc = glGetUniformLocation(objShaderID, LightPStr.c_str());
+
+		//sends light color
+		std::string LightCStr = "pointLights[" + std::to_string(i) + "].lightColor";
+		int LightColorLoc = glGetUniformLocation(objShaderID, LightCStr.c_str());
+
+		glUniform3fv(LightPosLoc, 1, glm::value_ptr(pointLights[i].lightPos));
+
+		glUniform3fv(LightColorLoc, 1, glm::value_ptr(pointLights[i].lightColor));
+	}
+}
+void Renderer::AddDirectionalLight(glm::vec3 dir, glm::vec3 lightColor)
+{
+	DirectionalLight d =
+	{
+		dir,
+		lightColor, 
+	};
+	directionalLights.push_back(d);
+}
+void Renderer::HandleDirectionalLights(glm::vec3 camPos)
+{
+	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
+	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+
+	int maxDirectionalLightsLoc = glGetUniformLocation(objShaderID, "maxDirectionalLights");
+	glUniform1i(maxDirectionalLightsLoc, directionalLights.size());
+
+	for (int i = 0; i < directionalLights.size(); i++)
+	{
+		//sends light direction
+		std::string lightDir = "directionalLights[" + std::to_string(i) + "].direction";
+		int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
+
+		glUniform3fv(LightDirLoc, 1, glm::value_ptr(directionalLights[i].lightDirection));
 
 
-	pointLights[1].lightPos = glm::vec3(lightObjects[pointLights[1].objIndex].model[3][0], lightObjects[pointLights[1].objIndex].model[3][1], lightObjects[pointLights[1].objIndex].model[3][2]);
+		//sends light color
+		std::string lightCol = "directionalLights[" + std::to_string(i) + "].lightDirColor";
+		int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
 
-	//sends attenuation values per light
-	AttenLinearLoc = glGetUniformLocation(objShaderID, "AttenLinear[1]");
-	AttenQuadLoc = glGetUniformLocation(objShaderID, "AttenQuad[1]");
-
-	glUniform1f(AttenLinearLoc, pointLights[1].linear);
-	glUniform1f(AttenQuadLoc, pointLights[1].quadratic);
-
-	//sends light position
-	LightPosLoc = glGetUniformLocation(objShaderID, "lightPositions[1]");
-
-	//sends light color
-	LightColorLoc = glGetUniformLocation(objShaderID, "lightColors[1]");
-
-	glUniform3fv(LightPosLoc, 1, glm::value_ptr(pointLights[1].lightPos));
-
-	glUniform3fv(LightColorLoc, 1, glm::value_ptr(pointLights[1].lightColor));
+		glUniform3fv(LightColLoc, 1, glm::value_ptr(directionalLights[i].lightColor));
+	}
 }
 void Renderer::initialize()//creates buffers in all objects and lights
 {

@@ -60,11 +60,12 @@ void Application::run()
 	glm::mat4 proj = glm::mat4(1.0f);
 	int GO = renderer.AddCube(1.5f, 0.0f, 0.0f, OBJECT);
 	int GL = renderer.AddCube(0.0f, 0.0f, 0.0f, POINT_LIGHT);
-	int GK = renderer.AddCube(3.0f, 0.0f, 0.0f, POINT_LIGHT);
 	int GT = renderer.AddCube(-1.5f, 0.0f, 0.0f, OBJECT);
 
-	renderer.AddPointLight(GL, 0.7f, 1.8f);
-	renderer.AddPointLight(GK, 0.7f, 1.8f);
+	renderer.AddPointLight(GL, glm::vec3(1.0,1.0,1.0), 0.7f, 1.8f);
+
+	renderer.AddDirectionalLight(glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	renderer.AddDirectionalLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	renderer.CompileShaders();//could move the call to initialize
 	renderer.initialize();
@@ -73,7 +74,6 @@ void Application::run()
 	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
 	renderer.SetCubeModelMat(GL, model, POINT_LIGHT);
 
-	renderer.SetCubeModelMat(GK, model, POINT_LIGHT);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -87,7 +87,9 @@ void Application::run()
 
 
 		renderer.HandlePointLights(input.cam.cameraPos);
+		renderer.HandleDirectionalLights(input.cam.cameraPos);
 
+		//example of moving point light
 		glm::vec3 moveLight = glm::vec3(0.0f);
 		if (input.inputs[GLFW_KEY_UP] == true)
 		{

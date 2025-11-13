@@ -6,13 +6,15 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
+#include<glm/gtx/string_cast.hpp>
+
 #include<iostream>
 #include<vector>
 #include<cerrno>
 #include<string>
 #include<fstream>
 #include<sstream>
+#include<string>
 
 struct Vertex
 {
@@ -42,7 +44,7 @@ struct PointLight
 struct DirectionalLight
 {
 	glm::vec3 lightDirection;
-
+	glm::vec3 lightColor;
 	//I do not think I need these yet (to be added)
 	//glm::vec3 ambient;
 	//glm::vec3 diffuse;
@@ -71,7 +73,6 @@ class Renderer
 		Renderer();
 		int AddCube(float pX, float pY, float pZ, obj t);//returns index of where cube is
 		void SetCubeModelMat(int index, glm::mat4 mod, obj t);
-		void HandlePointLights(glm::vec3 camPos);
 		void initialize();
 		void CompileShaders();
 		void ShaderErrors(unsigned int shader, const  char* type);
@@ -80,11 +81,15 @@ class Renderer
 		std::vector<Object> objects;
 		std::vector<Object> lightObjects;// to render the actual lights without them being affected by lights
 
+
 		std::vector<PointLight> pointLights;
-		void AddPointLight(int objInd, float lin, float quad);//follows an light object which is by index, 2 vars for attenuation the constant is 1.0f
+		void AddPointLight(int objInd, glm::vec3 color, float lin, float quad);//follows an light object which is by index, 2 vars for attenuation the constant is 1.0f
+		void HandlePointLights(glm::vec3 camPos);
+
 
 		std::vector<DirectionalLight> directionalLights;
-		void AddDirectionalLight(glm::vec3 dir);
+		void AddDirectionalLight(glm::vec3 dir, glm::vec3 lightColor);
+		void HandleDirectionalLights(glm::vec3 camPos);
 
 		GLuint objShaderID;
 		GLuint lightShaderID;

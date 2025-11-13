@@ -5,14 +5,31 @@ in vec3 FragPos;
 
 out vec4 FragColor;
 
-uniform vec3 lightPositions[];
 uniform vec3 viewPos;
-uniform vec3 lightColors[];
 
 const float specularStrength = 0.5f;
 
-uniform float AttenLinear[];
-uniform float AttenQuad[];
+//for point lights
+struct PointLight
+{
+    vec3 lightPosition;
+    vec3 lightColor;
+    float AttenLinear;
+    float AttenQuad;
+};
+uniform PointLight pointLights[128];
+uniform int maxPointLights;
+
+
+//for directional lights
+struct DirectionalLight
+{
+    vec3 direction;
+    vec3 lightDirColor;
+};
+uniform DirectionalLight directionalLights[128];
+uniform int maxDirectionalLights;
+
 
 vec3 calculatePointLighting(vec3 lightPos, vec3 lightColor, float AttenLinear, float AttenQuad)
 {
@@ -50,14 +67,52 @@ vec3 calculatePointLighting(vec3 lightPos, vec3 lightColor, float AttenLinear, f
     specular *= attenuation;
     diffuse *= attenuation;
 
-    vec3 result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);//object's color which later will be texture
+    vec3 result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    return result;
+}
+vec3 calculateDirectionalLighting(vec3 direction, vec3 lightDirColor)
+{
+    vec3 lightDirection = normalize(-direction);
+
+
+    //calculates diffuse lighting
+    vec3 norm = normalize(Normal);
+    float diff = max(dot(norm, lightDirection), 0.0f);
+    vec3 diffuse = diff * lightDirColor;
+
+
+    //calculates specular lighting
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 reflectDir = reflect(-lightDirection, norm);
+    
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 32);
+    vec3 specular = specularStrength * spec * lightDirColor;
+
+
+    //calculates ambient lighting
+    float ambientStrength = 0.1f;
+    vec3 ambient = ambientStrength * vec3(1.0f, 1.0f, 1.0f);
+
+
+
+    vec3 result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
     return result;
 }
 void main()
 {
     vec3 result = vec3(0.0f, 0.0f, 0.0f);
-    result += calculatePointLighting(lightPositions[0], lightColors[0], AttenLinear[0], AttenQuad[0]);
-    result += calculatePointLighting(lightPositions[1], lightColors[1], AttenLinear[1], AttenQuad[1]);
+
+
+    for(int i = 0; i < maxPointLights; i++)
+    {
+        result += calculatePointLighting(pointLights[i].lightPosition, pointLights[i].lightColor, pointLights[i].AttenLinear, pointLights[i].AttenQuad);
+    }
+
+
+    for(int j = 0; j < maxDirectionalLights; j++)
+    {
+        result += calculateDirectionalLighting(directionalLights[j].direction, directionalLights[j].lightDirColor);
+    }
 
     FragColor = vec4(result, 1.0f);
 }
