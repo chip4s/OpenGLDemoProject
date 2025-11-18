@@ -14,7 +14,6 @@
 #include<string>
 #include<fstream>
 #include<sstream>
-#include<string>
 
 struct Vertex
 {
@@ -49,6 +48,13 @@ struct DirectionalLight
 	//glm::vec3 ambient;
 	//glm::vec3 diffuse;
 	//glm::vec3 specular;
+};
+struct SpotLight
+{
+	glm::vec3 lightPos;
+	glm::vec3 lightColor;
+	glm::vec3 lightDirection;
+	float cutOff;
 };
 struct Object
 {
@@ -90,6 +96,10 @@ class Renderer
 		std::vector<DirectionalLight> directionalLights;
 		void AddDirectionalLight(glm::vec3 dir, glm::vec3 lightColor);
 		void HandleDirectionalLights(glm::vec3 camPos);
+
+		std::vector<SpotLight> spotLights;
+		void AddSpotLight(glm::vec3 pos, glm::vec3 color, glm::vec3 lightDir, float cutoff);
+		void HandleSpotLights(glm::vec3 camPos);
 
 		GLuint objShaderID;
 		GLuint lightShaderID;

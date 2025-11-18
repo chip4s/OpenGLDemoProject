@@ -161,6 +161,56 @@ void Renderer::HandleDirectionalLights(glm::vec3 camPos)
 		glUniform3fv(LightColLoc, 1, glm::value_ptr(directionalLights[i].lightColor));
 	}
 }
+void Renderer::AddSpotLight(glm::vec3 pos, glm::vec3 color, glm::vec3 lightDir, float cutoff)
+{
+	SpotLight s =
+	{
+		pos,
+		color,
+		lightDir,
+		cutoff,
+	};
+	spotLights.push_back(s);
+}
+void Renderer::HandleSpotLights(glm::vec3 camPos)
+{
+	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
+	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+
+	int maxSpotLightsLoc = glGetUniformLocation(objShaderID, "maxSpotLights");
+
+	glUniform1i(maxSpotLightsLoc, spotLights.size());
+
+	for (int i = 0; i < spotLights.size(); i++)
+	{
+		//sends light position
+		std::string lightPos = "spotLights[" + std::to_string(i) + "].lightPos";
+		int LightPosLoc = glGetUniformLocation(objShaderID, lightPos.c_str());
+
+		glUniform3fv(LightPosLoc, 1, glm::value_ptr(spotLights[i].lightPos));
+
+
+		//sends light color
+		std::string lightCol = "spotLights[" + std::to_string(i) + "].lightColor";
+		int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
+
+		glUniform3fv(LightColLoc, 1, glm::value_ptr(spotLights[i].lightColor));
+
+
+		//sends light direction
+		std::string lightDir = "spotLights[" + std::to_string(i) + "].lightDirection";
+		int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
+
+		glUniform3fv(LightDirLoc, 1, glm::value_ptr(spotLights[i].lightDirection));
+
+
+		//sends light cutoff
+		std::string lightCut = "spotLights[" + std::to_string(i) + "].cutOff";
+		int LightCutLoc = glGetUniformLocation(objShaderID, lightCut.c_str());
+
+		glUniform1f(LightCutLoc, spotLights[i].cutOff);
+	}
+}
 void Renderer::initialize()//creates buffers in all objects and lights
 {
 	for (Object& o : objects)
