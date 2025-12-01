@@ -24,7 +24,8 @@ class Application
 		double deltaTime;
 		double currentFrame;
 		double lastFrame;
-		//shader uniforms
-		//void UniformMat4(glm::mat4 mvp, std::string);
+
+		//window resize callback
+		static void window_Resize_Callback(GLFWwindow* window, int width, int height);
 };
 #endif

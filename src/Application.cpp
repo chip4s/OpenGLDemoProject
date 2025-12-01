@@ -22,7 +22,7 @@ Application::Application() : input(window)
 	windowHeight = 750;//glfwGetVideoMode(glfwGetPrimaryMonitor())->height;
 	// Create a GLFWwindow object of width by height, naming it
 	//window = glfwCreateWindow(windowWidth, windowHeight, "OpenGLDemos", glfwGetPrimaryMonitor(), NULL); //for fullscreen
-	window = glfwCreateWindow(windowWidth, windowHeight, "OpenGLDemos", NULL, NULL);
+	window = glfwCreateWindow(windowWidth, windowHeight, "OpenGLDemo", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -40,9 +40,17 @@ Application::Application() : input(window)
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = max, y = max
 	glViewport(0, 0, windowWidth, windowHeight);
+
+
+	glfwSetWindowUserPointer(window, reinterpret_cast<void*>(this));
+
 	glfwSetKeyCallback(window, Input::key_Callback);
+
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, Input::mouse_Callback);
+
+	glfwSetWindowSizeCallback(window, Application::window_Resize_Callback);
+
 
 	//enables face culling
 	glEnable(GL_CULL_FACE);
@@ -58,27 +66,27 @@ void Application::run()
 	glm::mat4 view = glm::mat4(1.0f);
 
 	glm::mat4 proj = glm::mat4(1.0f);
-	int GO = renderer.AddCube(0.0f, -1.5f, 0.0f, OBJECT);
-	int GL = renderer.AddCube(0.0f, 0.0f, 0.0f, POINT_LIGHT);
-	int GT = renderer.AddCube(0.0f, 1.5f, 0.0f, OBJECT);
 
 
-	renderer.AddPointLight(GL, glm::vec3(1.0f, 1.0f, 1.0f), 0.7f, 1.8f);
+	EntityManager entityManager(20);
 
-	renderer.AddDirectionalLight(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	Entity& entityOne = entityManager.AddEntity("default");
 
-	renderer.AddSpotLight(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::cos(glm::radians(43.0f)));
-
-
-	renderer.CompileShaders();//could move the call to initialize
-	renderer.initialize();
+	entityManager.AddComponent<CMesh>(entityOne, true);
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -3.0f, 0.0f), glm::vec3(0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
 
 
-	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f));
-	renderer.SetCubeModelMat(GL, model, POINT_LIGHT);
+	Entity& entityTwo = entityManager.AddEntity("default");
 
-	glm::mat4 mGO = glm::scale(glm::mat4(1.0f), glm::vec3(100.0f, 0.1f, 100.0f));
-	renderer.SetCubeModelMat(GO, mGO, OBJECT);
+	entityManager.AddComponent<CMesh>(entityTwo, false);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	entityManager.AddComponent<CDirectionalLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 0.5f);
+
+	CTransform& entityTwoTrans = entityManager.GetComponentByEntity<CTransform>(entityTwo);
+
+	renderer.CompileShaders();
+
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -86,41 +94,29 @@ void Application::run()
 		//activate shader before SENDING the uniforms
 
 		//3d matrices
-		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 100.0f);
+		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 10000.0f);
 		view = input.CreateViewMat();
 
+		glUseProgram(renderer.objShaderID);
+		renderer.HandlePointLights(input.cam.cameraPos, entityManager);
+		renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
+		renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
 
-		renderer.HandlePointLights(input.cam.cameraPos);
-		renderer.HandleDirectionalLights(input.cam.cameraPos);
-		renderer.HandleSpotLights(input.cam.cameraPos);
 
-		//example of moving point light
-		glm::vec3 moveLight = glm::vec3(0.0f);
-		if (input.inputs[GLFW_KEY_UP] == true)
+		if (input.inputs[GLFW_KEY_UP])
 		{
-			moveLight.z += -0.1f;
+			entityTwoTrans.rotation.z += 0.1f;
 		}
-		if (input.inputs[GLFW_KEY_DOWN] == true)
+		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			moveLight.z += 0.1f;
+			entityTwoTrans.rotation.z += -0.1f;
 		}
-		if (input.inputs[GLFW_KEY_RIGHT] == true)
-		{
-			moveLight.x += 0.1f;
-		}
-		if (input.inputs[GLFW_KEY_LEFT] == true)
-		{
-			moveLight.x += -0.1f;
-		}
-		glm::mat4 tML = glm::translate(glm::mat4(1.0f), moveLight);
-		renderer.SetCubeModelMat(GL, tML, POINT_LIGHT);
-
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);
 
 		//draws and takes pv Uniforms
-		renderer.Draw(proj, view);
+		renderer.Draw(proj, view, entityManager);
 
 		this->CalculateDeltaTime();
 
@@ -138,4 +134,15 @@ void Application::CalculateDeltaTime()
 	currentFrame = glfwGetTime();
 	deltaTime = currentFrame - lastFrame;
 	lastFrame = currentFrame;
+}
+void Application::window_Resize_Callback(GLFWwindow* window, int width, int height)
+{
+	Application* handler = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+	if (handler != nullptr)
+	{
+		handler->windowWidth = width;
+		handler->windowHeight = height;
+		glViewport(0, 0, handler->windowWidth, handler->windowHeight);
+	}
+	
 }

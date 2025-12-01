@@ -27,9 +27,13 @@ class Input
 		//keybinds
 		inline static std::unordered_map<int, bool> inputs;
 		static void key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-		void handle_CameraMovement(float dt);
+
+
 		//mouse and camera
 		static void mouse_Callback(GLFWwindow* window, double xpos, double ypos);
+		void handle_CameraMovement(float dt);
+
+		
 		inline static Camera cam =
 		{
 			true,

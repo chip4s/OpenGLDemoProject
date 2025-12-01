@@ -3,10 +3,12 @@
 Input::Input(GLFWwindow* w)
 {
 	window = w;
-	glfwSetWindowUserPointer(window, reinterpret_cast<void *>(this));
-	glfwSetKeyCallback(window, Input::key_Callback);
-	glfwSetCursorPosCallback(window, Input::mouse_Callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	//glfwSetWindowUserPointer(window, reinterpret_cast<void *>(this));
+
+	//glfwSetKeyCallback(window, Input::key_Callback);
+
+	//glfwSetCursorPosCallback(window, Input::mouse_Callback);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 void Input::key_Callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -99,3 +101,4 @@ glm::mat4 Input::CreateViewMat()
 {
     return glm::lookAt(cam.cameraPos, cam.cameraPos + cam.cameraFront, cam.cameraUp);
 }
+

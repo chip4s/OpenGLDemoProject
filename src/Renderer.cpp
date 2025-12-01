@@ -5,258 +5,215 @@ Renderer::Renderer()
 	objShaderID = 0;
 	lightShaderID = 0;
 }
-int Renderer::AddCube(float pX, float pY, float pZ, obj t)//fourth parameter is 0 if obj and > 1 if light
-{
-	//create new object to later add data then put it in vector
-	Object c;
 
-	c.model = glm::translate(glm::mat4(1.0f), glm::vec3(pX, pY, pZ));
-	//populates vertices and indices o
-	c.indices.reserve(36);
-	for (int f = 0; f < 24; f += 4)
-	{
-		c.indices.push_back(0 + f);
-		c.indices.push_back(1 + f);
-		c.indices.push_back(2 + f);
-		c.indices.push_back(2 + f);
-		c.indices.push_back(3 + f);
-		c.indices.push_back(0 + f);
-	}
-	c.verts.reserve(24);
-	//                       pos               normal
-	//front face
-	c.verts.push_back({-0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
-	c.verts.push_back({-0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
-	c.verts.push_back({0.5f, 0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
-	c.verts.push_back({0.5f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f});
-	//right face
-	c.verts.push_back({0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f});
-	c.verts.push_back({0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f});
-	c.verts.push_back({0.5f, 0.5f, -0.5f,  1.0f, 0.0f, 0.0f});
-	c.verts.push_back({0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f});
-	//left face
-	c.verts.push_back({-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f});
-	c.verts.push_back({-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f});
-	c.verts.push_back({-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f});
-	c.verts.push_back({-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f});
-	//top face
-	c.verts.push_back({-0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f});
-	c.verts.push_back({-0.5f, 0.5f, -0.5f,  0.0f, 1.0f, 0.0f});
-	c.verts.push_back({0.5f, 0.5f, -0.5f,  0.0f, 1.0f, 0.0f});
-	c.verts.push_back({0.5f, 0.5f, 0.5f,  0.0f, 1.0f, 0.0f});
-	//back face
-	c.verts.push_back({0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
-	c.verts.push_back({0.5f, 0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
-	c.verts.push_back({-0.5f, 0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
-	c.verts.push_back({-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f});
-	//bottom face
-	c.verts.push_back({-0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f});
-	c.verts.push_back({-0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f});
-	c.verts.push_back({0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f});
-	c.verts.push_back({0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f});
-	//adds object to renderer's list of all objects/lights depending on which will later get bufferIDs and be drawn
-	if (t > 0)
-	{
-		lightObjects.push_back(c);
-		return lightObjects.size() - 1;//returns index into where the object is for later reference
-	}
-	else if (t == OBJECT)
-	{
-		objects.push_back(c);
-		return objects.size() - 1;
-	}
-}
-void Renderer::AddPointLight(int objInd, glm::vec3 color,float lin, float quad)
-{ 
-	PointLight p =
-	{
-		glm::vec3(lightObjects[objInd].model[3][0],lightObjects[objInd].model[3][1], lightObjects[objInd].model[3][2]),//pos of light obj which i need to update every frame
-		color,
-		objInd,
-		1.0f,//constant for attenuation is always 1.0f(I think)
-		lin,
-		quad,
-	};
-	pointLights.push_back(p);
-}
-void Renderer::SetCubeModelMat(int index, glm::mat4 mod, obj t)
-{
-	if (t == OBJECT)
-	{
-		objects[index].model = objects[index].model * mod;
-	}
-	else if (t > 0)
-	{
-		lightObjects[index].model = lightObjects[index].model * mod;
-	}
-}
 //sends light position uniform to obj frag shader for lighting
-void Renderer::HandlePointLights(glm::vec3 camPos)//updates pointlight position and sends pointlight struct to frag shader
+void Renderer::HandlePointLights(glm::vec3 camPos, EntityManager& entityManager)//updates pointlight position and sends pointlight struct to frag shader
 {
 	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
 	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
 	
-	int maxPointLightsLoc = glGetUniformLocation(objShaderID, "maxPointLights");
-	glUniform1i(maxPointLightsLoc, pointLights.size());
+	int totalPointLights = 0;
 
+	//iterates through pointlights and sends light data
+	//assums pointlight has transform component
+	auto& pointLights = entityManager.GetComponentsByType<CPointLight>();
+	auto& transforms = entityManager.GetComponentsByType<CTransform>();
 
-	for (int i = 0; i < pointLights.size(); i++)
+	for (int i = 0; i < pointLights.size();i++)
 	{
-		//updates position of pointlight with obj
-		pointLights[i].lightPos = glm::vec3(lightObjects[pointLights[i].objIndex].model[3][0], lightObjects[pointLights[i].objIndex].model[3][1], lightObjects[pointLights[i].objIndex].model[3][2]);
+		CPointLight& entityPointLight = pointLights[i];
+		CTransform& entityTransform = transforms[i];
+		if (entityPointLight.exists == true)
+		{
+			//sends attenuation values per light and intensity
+			std::string AttenLStr = "pointLights[" + std::to_string(totalPointLights) + "].AttenLinear";
+			int AttenLinearLoc = glGetUniformLocation(objShaderID, AttenLStr.c_str());
 
-		//sends attenuation values per light
-		std::string AttenLStr = "pointLights[" + std::to_string(i) + "].AttenLinear";
-		int AttenLinearLoc = glGetUniformLocation(objShaderID, AttenLStr.c_str());
+			std::string AttenQStr = "pointLights[" + std::to_string(totalPointLights) + "].AttenQuad";
+			int AttenQuadLoc = glGetUniformLocation(objShaderID, AttenQStr.c_str());
 
-		std::string AttenQStr = "pointLights[" + std::to_string(i) + "].AttenQuad";
-		int AttenQuadLoc = glGetUniformLocation(objShaderID, AttenQStr.c_str());
+			std::string IntensityStr = "pointLights[" + std::to_string(totalPointLights) + "].intensity";
+			int IntensityLoc = glGetUniformLocation(objShaderID, IntensityStr.c_str());
 
-		glUniform1f(AttenLinearLoc, pointLights[i].linear);
-		glUniform1f(AttenQuadLoc, pointLights[i].quadratic);
 
-		//sends light position
-		std::string LightPStr = "pointLights[" + std::to_string(i) + "].lightPosition";
-		int LightPosLoc = glGetUniformLocation(objShaderID, LightPStr.c_str());
+			glUniform1f(AttenLinearLoc, entityPointLight.linear);
+			glUniform1f(AttenQuadLoc, entityPointLight.quadratic);
+			glUniform1f(IntensityLoc, entityPointLight.intensity);
 
-		//sends light color
-		std::string LightCStr = "pointLights[" + std::to_string(i) + "].lightColor";
-		int LightColorLoc = glGetUniformLocation(objShaderID, LightCStr.c_str());
 
-		glUniform3fv(LightPosLoc, 1, glm::value_ptr(pointLights[i].lightPos));
+			//sends light position
+			std::string LightPStr = "pointLights[" + std::to_string(totalPointLights) + "].lightPos";
+			int LightPosLoc = glGetUniformLocation(objShaderID, LightPStr.c_str());
 
-		glUniform3fv(LightColorLoc, 1, glm::value_ptr(pointLights[i].lightColor));
+			glUniform3fv(LightPosLoc, 1, glm::value_ptr(entityTransform.position));
+
+
+			//sends light color
+			std::string LightCStr = "pointLights[" + std::to_string(totalPointLights) + "].lightColor";
+			int LightColorLoc = glGetUniformLocation(objShaderID, LightCStr.c_str());
+
+			glUniform3fv(LightColorLoc, 1, glm::value_ptr(entityPointLight.lightColor));
+
+
+			totalPointLights++;
+		}
 	}
+
+	int maxPointLightsLoc = glGetUniformLocation(objShaderID, "maxPointLights");
+	glUniform1i(maxPointLightsLoc, totalPointLights);
 }
-void Renderer::AddDirectionalLight(glm::vec3 dir, glm::vec3 lightColor)
-{
-	DirectionalLight d =
-	{
-		dir,
-		lightColor, 
-	};
-	directionalLights.push_back(d);
-}
-void Renderer::HandleDirectionalLights(glm::vec3 camPos)
+
+void Renderer::HandleDirectionalLights(glm::vec3 camPos, EntityManager& entityManager)
 {
 	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
 	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+
+
+	int totalDirectionalLights = 0;// current amount of directional lights
+
+
+	auto& directionalLights = entityManager.GetComponentsByType<CDirectionalLight>();
+	auto& transforms = entityManager.GetComponentsByType<CTransform>();
+
+	for (int i = 0; i < directionalLights.size();i++)
+	{
+		CDirectionalLight& entityDirectionalLight = directionalLights[i];
+
+		if (entityDirectionalLight.exists == true)
+		{
+			std::string lightDir = "directionalLights[" + std::to_string(totalDirectionalLights) + "].direction";
+			int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
+	
+
+			//calc. direction off of transform
+			CTransform& entityTransform = transforms[i];
+			//set to default direction which is down
+			glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+			if (entityTransform.exists == true)
+			{
+				//calculate rotation to change direction by
+				glm::mat4 rotDirection(1.0f);
+				rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+				//apply rotation to direction
+				glm::vec4 newDirection = rotDirection * glm::vec4(direction, 1.0f);
+				direction = glm::vec3(newDirection.x, newDirection.y, newDirection.z);
+			}
+
+			glUniform3fv(LightDirLoc, 1, glm::value_ptr(direction));
+
+
+			//sends light color
+			std::string lightCol = "directionalLights[" + std::to_string(totalDirectionalLights) + "].lightDirColor";
+			int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
+
+			glUniform3fv(LightColLoc, 1, glm::value_ptr(entityDirectionalLight.lightColor));
+
+
+			//send light intensity
+			std::string lightIntensity = "directionalLights[" + std::to_string(totalDirectionalLights) + "].intensity";
+			int LightIntensityLoc = glGetUniformLocation(objShaderID, lightIntensity.c_str());
+
+			glUniform1f(LightIntensityLoc, entityDirectionalLight.intensity);
+
+			totalDirectionalLights++;
+		}
+	}
+
 
 	int maxDirectionalLightsLoc = glGetUniformLocation(objShaderID, "maxDirectionalLights");
-	glUniform1i(maxDirectionalLightsLoc, directionalLights.size());
-
-	for (int i = 0; i < directionalLights.size(); i++)
-	{
-		//sends light direction
-		std::string lightDir = "directionalLights[" + std::to_string(i) + "].direction";
-		int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
-
-		glUniform3fv(LightDirLoc, 1, glm::value_ptr(directionalLights[i].lightDirection));
-
-
-		//sends light color
-		std::string lightCol = "directionalLights[" + std::to_string(i) + "].lightDirColor";
-		int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
-
-		glUniform3fv(LightColLoc, 1, glm::value_ptr(directionalLights[i].lightColor));
-	}
+	glUniform1i(maxDirectionalLightsLoc, totalDirectionalLights);
 }
-void Renderer::AddSpotLight(glm::vec3 pos, glm::vec3 color, glm::vec3 lightDir, float cutoff)
-{
-	SpotLight s =
-	{
-		pos,
-		color,
-		lightDir,
-		cutoff,
-	};
-	spotLights.push_back(s);
-}
-void Renderer::HandleSpotLights(glm::vec3 camPos)
+
+void Renderer::HandleSpotLights(glm::vec3 camPos, EntityManager& entityManager)
 {
 	int viewPosLoc = glGetUniformLocation(objShaderID, "viewPos");
 	glUniform3f(viewPosLoc, camPos.x, camPos.y, camPos.z);
+
+
+	int totalSpotLights = 0;
+
+
+	auto& spotLights = entityManager.GetComponentsByType<CSpotLight>();
+	auto& transforms = entityManager.GetComponentsByType<CTransform>();
+
+	for (int i = 0; i < spotLights.size();i++)
+	{
+		CTransform& entityTransform = transforms[i];
+		CSpotLight& entitySpotLight = spotLights[i];
+
+		if (entityTransform.exists == true && entitySpotLight.exists == true)
+		{
+			//sends light position
+			std::string lightPos = "spotLights[" + std::to_string(totalSpotLights) + "].lightPos";
+			int LightPosLoc = glGetUniformLocation(objShaderID, lightPos.c_str());
+
+			glUniform3fv(LightPosLoc, 1, glm::value_ptr(entityTransform.position));
+
+			//sends light color
+			std::string lightCol = "spotLights[" + std::to_string(totalSpotLights) + "].lightColor";
+			int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
+
+			glUniform3fv(LightColLoc, 1, glm::value_ptr(entitySpotLight.lightColor));
+
+
+			//sends light direction
+
+			//calculates direction based off transform component
+			glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);//default direction
+		
+			//calculate rotation to change direction by
+			glm::mat4 rotDirection(1.0f);
+			rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			rotDirection = glm::rotate(rotDirection, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+
+				//apply rotation to direction
+			glm::vec4 newDirection = rotDirection * glm::vec4(direction, 1.0f);
+			direction = glm::vec3(newDirection.x, newDirection.y, newDirection.z);
+
+
+			//sends light direction
+			std::string lightDir = "spotLights[" + std::to_string(totalSpotLights) + "].lightDirection";
+			int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
+
+			glUniform3fv(LightDirLoc, 1, glm::value_ptr(direction));
+
+
+			//sends light cutoff
+			std::string lightCut = "spotLights[" + std::to_string(totalSpotLights) + "].cutOff";
+			int LightCutLoc = glGetUniformLocation(objShaderID, lightCut.c_str());
+
+			glUniform1f(LightCutLoc, entitySpotLight.cutOff);
+
+
+			//sends light outerCutOff
+			std::string lightOutCut = "spotLights[" + std::to_string(totalSpotLights) + "].outerCutOff";
+			int LightOutCutLoc = glGetUniformLocation(objShaderID, lightCut.c_str());
+
+			glUniform1f(LightOutCutLoc, entitySpotLight.outerCutOff);
+
+
+			//sends light intensity
+			std::string lightIntensity = "spotLights[" + std::to_string(totalSpotLights) + "].intensity";
+			int lightIntensityLoc = glGetUniformLocation(objShaderID, lightIntensity.c_str());
+
+			glUniform1f(lightIntensityLoc, entitySpotLight.intensity);
+
+
+			totalSpotLights++;
+		}
+	}
+
 
 	int maxSpotLightsLoc = glGetUniformLocation(objShaderID, "maxSpotLights");
 
-	glUniform1i(maxSpotLightsLoc, spotLights.size());
-
-	for (int i = 0; i < spotLights.size(); i++)
-	{
-		//sends light position
-		std::string lightPos = "spotLights[" + std::to_string(i) + "].lightPos";
-		int LightPosLoc = glGetUniformLocation(objShaderID, lightPos.c_str());
-
-		glUniform3fv(LightPosLoc, 1, glm::value_ptr(spotLights[i].lightPos));
-
-
-		//sends light color
-		std::string lightCol = "spotLights[" + std::to_string(i) + "].lightColor";
-		int LightColLoc = glGetUniformLocation(objShaderID, lightCol.c_str());
-
-		glUniform3fv(LightColLoc, 1, glm::value_ptr(spotLights[i].lightColor));
-
-
-		//sends light direction
-		std::string lightDir = "spotLights[" + std::to_string(i) + "].lightDirection";
-		int LightDirLoc = glGetUniformLocation(objShaderID, lightDir.c_str());
-
-		glUniform3fv(LightDirLoc, 1, glm::value_ptr(spotLights[i].lightDirection));
-
-
-		//sends light cutoff
-		std::string lightCut = "spotLights[" + std::to_string(i) + "].cutOff";
-		int LightCutLoc = glGetUniformLocation(objShaderID, lightCut.c_str());
-
-		glUniform1f(LightCutLoc, spotLights[i].cutOff);
-	}
+	glUniform1i(maxSpotLightsLoc, totalSpotLights);
 }
-void Renderer::initialize()//creates buffers in all objects and lights
-{
-	for (Object& o : objects)
-	{
-		//generates the vao
-		glGenVertexArrays(1, &o.VAO);
-		glBindVertexArray(o.VAO);
-		//generates the vbo
-		glGenBuffers(1, &o.VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, o.VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * o.verts.size(), o.verts.data(), GL_STATIC_DRAW);
 
-		//generates ebo
-		glGenBuffers(1, &o.EBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, o.EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * o.indices.size(), o.indices.data(), GL_STATIC_DRAW);
 
-		//sets attribute pointers
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-	}
-	int counter = 0;
-	for (Object& l : lightObjects)
-	{
-		//generates the vao
-		glGenVertexArrays(1, &l.VAO);
-		glBindVertexArray(l.VAO);
-		//generates the vbo
-		glGenBuffers(1, &l.VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * l.verts.size(), l.verts.data(), GL_STATIC_DRAW);
-
-		//generates ebo
-		glGenBuffers(1, &l.EBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * l.indices.size(), l.indices.data(), GL_STATIC_DRAW);
-
-		//sets attribute pointers
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-		glEnableVertexAttribArray(1);
-	}
-}
 void Renderer::CompileShaders()
 {
 	//for object shaders
@@ -284,12 +241,13 @@ void Renderer::CompileShaders()
 
 	//Creates the shader program(only one type of program)
 	objShaderID = glCreateProgram();
-
+	
 	//Attaches both shaders to shader program and links program
 	glAttachShader(objShaderID, vertexShaderO);
 	glAttachShader(objShaderID, fragmentShaderO);
 	glLinkProgram(objShaderID);
 	ShaderErrors(objShaderID, "PROGRAM");
+	//std::cout << glGetError() << "\n\n";
 
 	//Deletes shaders after they are linked
 	glDeleteShader(vertexShaderO);
@@ -335,6 +293,7 @@ void Renderer::CompileShaders()
 }
 void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 {
+	//std::cout << glGetError() << " used shader errors\n\n";
 	GLint hasCompiled;
 	char infoLog[1024];
 	if (type != "PROGRAM")
@@ -348,36 +307,18 @@ void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 	}
 	else
 	{
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
+		glGetProgramiv(shader, GL_LINK_STATUS, &hasCompiled);;
 		if (hasCompiled == GL_FALSE)
 		{
 			glGetShaderInfoLog(shader, 512, NULL, infoLog);
 			std::cout << "SHADER_LINKING_ERROR for:" << type << "\n" << std::endl;
 		}
+		//std::cout << hasCompiled << " code\n";
 	}
 }
 
-void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
+void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager)
 {
-	//iterates through lights and sends model mat4 + draws them
-	glUseProgram(lightShaderID);
-	int viewLocL = glGetUniformLocation(lightShaderID, "v");
-	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
-
-	int projLocL = glGetUniformLocation(lightShaderID, "p");
-	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
-
-	int modelLocL = glGetUniformLocation(lightShaderID, "m");
-	for (Object& l : lightObjects)
-	{
-		glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(l.model));
-
-		glBindVertexArray(l.VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, l.VBO);//may only need to call vao bind but unsure
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, l.EBO);
-		glDrawElements(GL_TRIANGLES, l.indices.size(), GL_UNSIGNED_INT, 0);
-	}
-
 	//same for regular objects
 	glUseProgram(objShaderID);
 	int viewLocO = glGetUniformLocation(objShaderID, "v");
@@ -387,34 +328,93 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view)
 	glUniformMatrix4fv(projLocO, 1, GL_FALSE, glm::value_ptr(proj));
 
 	int modelLocO = glGetUniformLocation(objShaderID, "m");
-	for (Object& o : objects)
+	//iterates through entity meshes
+	auto& meshesO = entityManager.GetComponentsByType<CMesh>();
+	auto& transformsO = entityManager.GetComponentsByType<CTransform>();
+	for (int i = 0; i < meshesO.size();i++)
 	{
-		//send model matrix
-		glUniformMatrix4fv(modelLocO, 1, GL_FALSE, glm::value_ptr(o.model));
+		//check if object has mesh to draw and affected by light
+		CMesh& entityMesh = meshesO[i];
+		if (entityMesh.exists && entityMesh.usesLight == true)
+		{
+			CTransform& entityTransform = transformsO[i];
+			glm::mat4 model(1.0f);
+			if (entityTransform.exists)
+			{
+				model = glm::translate(model, entityTransform.position);
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+				model = glm::scale(model, entityTransform.scale);
+			}
 
-		glBindVertexArray(o.VAO);
-		glBindBuffer(GL_ARRAY_BUFFER, o.VBO);//may only need to call vao bind but unsure
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, o.EBO);
-		glDrawElements(GL_TRIANGLES, o.indices.size(), GL_UNSIGNED_INT, 0);
+			//sends model matrix 
+			glUniformMatrix4fv(modelLocO, 1, GL_FALSE, glm::value_ptr(model));
+
+
+			if (entityMesh.isInitialized == false)
+			{
+				entityMesh.initializeMesh();
+				entityMesh.isInitialized = true;
+			}
+			glBindVertexArray(entityMesh.VAO);
+			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
+		}
+	}
+
+	//iterates through entities unaffected by lights and sends model mat4 + draws them
+	glUseProgram(lightShaderID);
+	int viewLocL = glGetUniformLocation(lightShaderID, "v");
+	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
+
+	int projLocL = glGetUniformLocation(lightShaderID, "p");
+	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
+
+	int modelLocL = glGetUniformLocation(lightShaderID, "m");
+	//iterates through entity meshes
+	auto& meshesL = entityManager.GetComponentsByType<CMesh>();
+	auto& transformsL = entityManager.GetComponentsByType<CTransform>();
+	for (int i = 0; i < meshesL.size();i++)
+	{
+		//check if object has mesh to draw and unaffected by light
+		CMesh& entityMesh = meshesL[i];
+		if (entityMesh.exists && entityMesh.usesLight == false)
+		{
+			CTransform& entityTransform = transformsL[i];
+			glm::mat4 model(1.0f);
+			if (entityTransform.exists)
+			{
+				model = glm::translate(model, entityTransform.position);
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+				model = glm::scale(model, entityTransform.scale);
+			}
+
+			//sends model matrix 
+			glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(model));
+
+
+			if (entityMesh.isInitialized == false)
+			{
+				entityMesh.initializeMesh();
+				entityMesh.isInitialized = true;
+			}
+
+			glBindVertexArray(entityMesh.VAO);
+			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
+			//std::cout << glGetError() << "3\n\n";
+		}
 	}
 }
+
 Renderer::~Renderer()
 {
-	//goes through all objects and deletes them
+	//deletes shaders
 	glUseProgram(0);
-	for (Object& o : objects)
-	{
-		glDeleteBuffers(1, &o.VBO);
-		glDeleteBuffers(1, &o.EBO);
-		glDeleteVertexArrays(1, &o.VAO);
-	}
+
 	glDeleteProgram(objShaderID);
-	for (Object& l : lightObjects)
-	{
-		glDeleteBuffers(1, &l.VBO);
-		glDeleteBuffers(1, &l.EBO);
-		glDeleteVertexArrays(1, &l.VAO);
-	}
+
 	glDeleteProgram(lightShaderID);
 }
 //function to read glsl shader files
