@@ -62,16 +62,17 @@ vec3 calculatePointLighting(PointLight light)
 
     //calculates diffuse lighting
     vec3 norm = normalize(Normal);
+
     vec3 lightDir = normalize(light.lightPos - FragPos);
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+
     float diff = max(dot(norm, lightDir), 0.0f);
     vec3 diffuse = diff * light.lightColor;
 
 
     //calculates specular lighting
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 32);
+    float spec = pow(max(dot(norm, halfwayDir), 0.0f), 32);
     vec3 specular = specularStrength * spec * light.lightColor;
 
 
@@ -81,11 +82,11 @@ vec3 calculatePointLighting(PointLight light)
 
     
     //applies attenuation to all types of lighting
-    ambient *= attenuation;// * light.intensity;
+    //ambient *= attenuation;// * light.intensity;
     specular *= attenuation * light.intensity;
     diffuse *= attenuation * light.intensity;
 
-    vec3 result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    vec3 result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
     return result;
 }
 
@@ -93,6 +94,8 @@ vec3 calculatePointLighting(PointLight light)
 vec3 calculateDirectionalLighting(DirectionalLight light)
 {
     vec3 lightDirection = normalize(-light.direction);
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 halfwayDir = normalize(lightDirection + viewDir);
 
 
     //calculates diffuse lighting
@@ -103,10 +106,7 @@ vec3 calculateDirectionalLighting(DirectionalLight light)
 
 
     //calculates specular lighting
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDirection, norm);
-    
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 32);
+    float spec = pow(max(dot(norm, halfwayDir), 0.0f), 32);
     vec3 specular = specularStrength * spec * light.lightDirColor;
 
 
@@ -122,7 +122,7 @@ vec3 calculateDirectionalLighting(DirectionalLight light)
     specular *= light.intensity;
 
 
-    vec3 result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    vec3 result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
     return result;
 }
 
@@ -130,6 +130,8 @@ vec3 calculateDirectionalLighting(DirectionalLight light)
 vec3 calculateSpotLighting(SpotLight light)
 {
     vec3 lightDir = normalize(light.lightPos - FragPos);
+    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float theta = dot(lightDir, normalize(-light.lightDirection));
     float epsilon = light.cutOff - light.outerCutOff;
@@ -140,16 +142,13 @@ vec3 calculateSpotLighting(SpotLight light)
 
     //calculates diffuse lighting
     vec3 norm = normalize(Normal);
-    //lightDir would get defined on this line;
+
     float diff = max(dot(norm, lightDir), 0.0f);
-    vec3 diffuse = diff * light.lightColor;//light color
+    vec3 diffuse = diff * light.lightColor;
 
 
     //calculates specular lighting
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0f), 32);
+    float spec = pow(max(dot(norm, halfwayDir), 0.0f), 32);
     vec3 specular = specularStrength * spec * light.lightColor;
 
 
@@ -160,18 +159,24 @@ vec3 calculateSpotLighting(SpotLight light)
 
     diffuse *= intensity * light.intensity;
     specular *= intensity * light.intensity;
-    //ambient *= light.intensity;
+    //ambient *= intensity;// * light.intensity;
 
 
-    result = (ambient + diffuse + specular) * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
 
     return result;
 
 }
+
+const float gamma = 1 / 2.2f;
+
+in vec2 TexCoord;
+
+uniform sampler2D textureSampler;
+
 void main()
 {
     vec3 result = vec3(0.0f, 0.0f, 0.0f);
-
 
 
     for(int i = 0; i < maxPointLights; i++)
@@ -191,6 +196,10 @@ void main()
         result += calculateSpotLighting(spotLights[o]);
     }
 
+    //result is brightness from light, now apply texture color
+    result *= texture(textureSampler, TexCoord).rgb;
 
-    FragColor = vec4(result, 1.0f);
+
+    //basic gamma correction
+    FragColor = vec4(pow(result, vec3(gamma)), texture(textureSampler, TexCoord).a);
 }

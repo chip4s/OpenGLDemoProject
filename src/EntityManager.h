@@ -13,7 +13,8 @@ using ComponentVectors = std::tuple
 	std::vector<CMesh>,
 	std::vector<CPointLight>,
 	std::vector<CDirectionalLight>,
-	std::vector<CSpotLight>
+	std::vector<CSpotLight>,
+	std::vector<CTexture>
 >;
 
 class EntityManager

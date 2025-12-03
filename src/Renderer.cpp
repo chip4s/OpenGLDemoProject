@@ -3,7 +3,7 @@
 Renderer::Renderer()
 {
 	objShaderID = 0;
-	lightShaderID = 0;
+	shadowShaderID = 0;
 }
 
 //sends light position uniform to obj frag shader for lighting
@@ -187,6 +187,7 @@ void Renderer::HandleSpotLights(glm::vec3 camPos, EntityManager& entityManager)
 			int LightCutLoc = glGetUniformLocation(objShaderID, lightCut.c_str());
 
 			glUniform1f(LightCutLoc, entitySpotLight.cutOff);
+			std::cout << entitySpotLight.outerCutOff << "\n\n";
 
 
 			//sends light outerCutOff
@@ -253,15 +254,18 @@ void Renderer::CompileShaders()
 	glDeleteShader(vertexShaderO);
 	glDeleteShader(fragmentShaderO);
 	//std::cout << "object shaders compile and work\n";
-	
-	//for light shaders
-	const char* vertexFileL = "litVertexShader.vert";
-	const char* fragmentFileL = "litFragmentShader.frag";
+
+
+
+	//same for shadow shaders
+	//for object shaders
+	const char* vertexFileL = "Shadows.vert";
+	const char* fragmentFileL = "Shadows.frag";
 
 	std::string vertexCodeL = get_file_contents(vertexFileL);
 	std::string fragmentCodeL = get_file_contents(fragmentFileL);
-	//std::cout << vertexCodeL << "lv\n\n\n\n\n";
-	//std::cout << fragmentCodeL << "lf\n\n\n\n\n";
+	//std::cout << vertexCodeO << "ov\n\n\n\n\n";
+	//std::cout << fragmentCodeO << "of\n\n\n\n\n";
 
 	const char* vertexSourceL = vertexCodeL.c_str();
 	const char* fragmentSourceL = fragmentCodeL.c_str();
@@ -278,18 +282,20 @@ void Renderer::CompileShaders()
 	ShaderErrors(fragmentShaderL, "FRAGMENT");
 
 	//Creates the shader program(only one type of program)
-	lightShaderID = glCreateProgram();
+	shadowShaderID = glCreateProgram();
 
 	//Attaches both shaders to shader program and links program
-	glAttachShader(lightShaderID, vertexShaderL);
-	glAttachShader(lightShaderID, fragmentShaderL);
-	glLinkProgram(lightShaderID);
-	ShaderErrors(lightShaderID, "PROGRAM");
+	glAttachShader(shadowShaderID, vertexShaderL);
+	glAttachShader(shadowShaderID, fragmentShaderL);
+	glLinkProgram(shadowShaderID);
+	ShaderErrors(shadowShaderID, "PROGRAM");
+	//std::cout << glGetError() << "\n\n";
 
 	//Deletes shaders after they are linked
-	glDeleteShader(vertexShaderO);
-	glDeleteShader(fragmentShaderO);
-	//std::cout << "light shaders compile and work\n";
+	glDeleteShader(vertexShaderL);
+	glDeleteShader(fragmentShaderL);
+	//std::cout << "object shaders compile and work\n";
+	
 }
 void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 {
@@ -319,7 +325,7 @@ void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 
 void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager)
 {
-	//same for regular objects
+	//iterates through entities meshes and sends model mat4 + draws them
 	glUseProgram(objShaderID);
 	int viewLocO = glGetUniformLocation(objShaderID, "v");
 	glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(view));
@@ -331,13 +337,15 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 	//iterates through entity meshes
 	auto& meshesO = entityManager.GetComponentsByType<CMesh>();
 	auto& transformsO = entityManager.GetComponentsByType<CTransform>();
+	auto& texturesO = entityManager.GetComponentsByType<CTexture>();
 	for (int i = 0; i < meshesO.size();i++)
 	{
-		//check if object has mesh to draw and affected by light
+		//check if object has mesh to draw
 		CMesh& entityMesh = meshesO[i];
-		if (entityMesh.exists && entityMesh.usesLight == true)
+		if (entityMesh.exists)
 		{
 			CTransform& entityTransform = transformsO[i];
+			CTexture& entityTexture = texturesO[i];
 			glm::mat4 model(1.0f);
 			if (entityTransform.exists)
 			{
@@ -355,55 +363,14 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 			if (entityMesh.isInitialized == false)
 			{
 				entityMesh.initializeMesh();
-				entityMesh.isInitialized = true;
 			}
+			if (entityTexture.isLoaded == false)
+			{
+				entityTexture.LoadTexture();
+			}
+			entityTexture.BindTexture();
 			glBindVertexArray(entityMesh.VAO);
 			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
-		}
-	}
-
-	//iterates through entities unaffected by lights and sends model mat4 + draws them
-	glUseProgram(lightShaderID);
-	int viewLocL = glGetUniformLocation(lightShaderID, "v");
-	glUniformMatrix4fv(viewLocL, 1, GL_FALSE, glm::value_ptr(view));
-
-	int projLocL = glGetUniformLocation(lightShaderID, "p");
-	glUniformMatrix4fv(projLocL, 1, GL_FALSE, glm::value_ptr(proj));
-
-	int modelLocL = glGetUniformLocation(lightShaderID, "m");
-	//iterates through entity meshes
-	auto& meshesL = entityManager.GetComponentsByType<CMesh>();
-	auto& transformsL = entityManager.GetComponentsByType<CTransform>();
-	for (int i = 0; i < meshesL.size();i++)
-	{
-		//check if object has mesh to draw and unaffected by light
-		CMesh& entityMesh = meshesL[i];
-		if (entityMesh.exists && entityMesh.usesLight == false)
-		{
-			CTransform& entityTransform = transformsL[i];
-			glm::mat4 model(1.0f);
-			if (entityTransform.exists)
-			{
-				model = glm::translate(model, entityTransform.position);
-				model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-				model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-				model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-				model = glm::scale(model, entityTransform.scale);
-			}
-
-			//sends model matrix 
-			glUniformMatrix4fv(modelLocL, 1, GL_FALSE, glm::value_ptr(model));
-
-
-			if (entityMesh.isInitialized == false)
-			{
-				entityMesh.initializeMesh();
-				entityMesh.isInitialized = true;
-			}
-
-			glBindVertexArray(entityMesh.VAO);
-			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
-			//std::cout << glGetError() << "3\n\n";
 		}
 	}
 }
@@ -415,7 +382,7 @@ Renderer::~Renderer()
 
 	glDeleteProgram(objShaderID);
 
-	glDeleteProgram(lightShaderID);
+	glDeleteProgram(shadowShaderID);
 }
 //function to read glsl shader files
 std::string get_file_contents(const char* filename)

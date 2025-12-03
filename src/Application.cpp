@@ -59,6 +59,13 @@ Application::Application() : input(window)
 
 	//enables depth testing
 	glEnable(GL_DEPTH_TEST);
+
+	//enables blend (transparency)
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//makes images not upside down
+	stbi_set_flip_vertically_on_load(true);
 }
 void Application::run()
 {
@@ -72,15 +79,16 @@ void Application::run()
 
 	Entity& entityOne = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityOne, true);
+	entityManager.AddComponent<CMesh>(entityOne);
 	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -3.0f, 0.0f), glm::vec3(0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
+	entityManager.AddComponent<CTexture>(entityOne, "Textures/default.png");
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityTwo, false);
+	entityManager.AddComponent<CMesh>(entityTwo);
 	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	entityManager.AddComponent<CDirectionalLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 0.5f);
+	entityManager.AddComponent<CDirectionalLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 0.75f);
 
 	CTransform& entityTwoTrans = entityManager.GetComponentByEntity<CTransform>(entityTwo);
 
@@ -105,12 +113,22 @@ void Application::run()
 
 		if (input.inputs[GLFW_KEY_UP])
 		{
-			entityTwoTrans.rotation.z += 0.1f;
+			entityTwoTrans.position.z += 0.3f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			entityTwoTrans.rotation.z += -0.1f;
+			entityTwoTrans.position.z += -0.3f;
 		}
+
+		if (input.inputs[GLFW_KEY_RIGHT])
+		{
+			entityTwoTrans.rotation.z += 0.3f;
+		}
+		if (input.inputs[GLFW_KEY_LEFT])
+		{
+			entityTwoTrans.rotation.z += -0.3f;
+		}
+
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);
