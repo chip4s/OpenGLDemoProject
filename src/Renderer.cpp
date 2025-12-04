@@ -4,6 +4,10 @@ Renderer::Renderer()
 {
 	objShaderID = 0;
 	shadowShaderID = 0;
+
+
+	//resolution of shadow framebuffer
+	size = 1024;
 }
 
 //sends light position uniform to obj frag shader for lighting
@@ -297,6 +301,7 @@ void Renderer::CompileShaders()
 	//std::cout << "object shaders compile and work\n";
 	
 }
+
 void Renderer::ShaderErrors(unsigned int shader, const  char* type)
 {
 	//std::cout << glGetError() << " used shader errors\n\n";
@@ -327,6 +332,7 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 {
 	//iterates through entities meshes and sends model mat4 + draws them
 	glUseProgram(objShaderID);
+
 	int viewLocO = glGetUniformLocation(objShaderID, "v");
 	glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(view));
 
@@ -373,6 +379,150 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
 		}
 	}
+}
+
+void Renderer::ShadowBufferInitialize()
+{
+	//create perspective matrix
+	shadowPerspective = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 25.0f);
+
+
+	//create cube map to store in all directions
+	glGenTextures(1, &shadowCubeMap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
+
+	for (int i = 0; i < 6; i++)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32F, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+
+	//create frame buffer
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowCubeMap, 0);
+
+
+	//don't write or read color buffer
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << " not done\n\n";
+	}
+
+}
+
+void Renderer::ShadowBufferWriteBind(GLenum cubeFace)
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
+	glViewport(0, 0, size, size);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, cubeFace, shadowCubeMap, 0);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+}
+
+void Renderer::ShadowBufferReadBind(GLenum TextureUnit)
+{
+	glActiveTexture(TextureUnit);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
+}
+
+void Renderer::ShadowPass(EntityManager& entityManager)
+{
+	glUseProgram(shadowShaderID);
+
+	//uniform for light position as a vec3
+	//stand in values for now (HardCoded)
+	auto& entityTransforms = entityManager.GetComponentsByType<CTransform>();
+
+	glm::vec3 lightPos = entityTransforms[1].position;
+
+
+	int LightPosLoc = glGetUniformLocation(shadowShaderID, "lightPos");
+	glUniform3fv(LightPosLoc, 1, glm::value_ptr(lightPos));
+
+	glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+
+	for (int i = 0; i < 6; i++)
+	{
+		ShadowBufferWriteBind(cameraDirections[i].cubeFace);
+
+		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+		glm::mat4 lightView = glm::mat4(1.0f);
+		//UNSURE: add light pos to second parameter?
+		lightView = glm::lookAt(lightPos, lightPos + cameraDirections[i].target, cameraDirections[i].up);
+
+
+		//RENDER all meshes and set uniforms
+		//only M mat4
+		//pasted from draw method
+
+		int viewLocO = glGetUniformLocation(shadowShaderID, "v");
+		glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(lightView));
+
+		int projLocO = glGetUniformLocation(shadowShaderID, "p");
+		glUniformMatrix4fv(projLocO, 1, GL_FALSE, glm::value_ptr(shadowPerspective));
+
+		int modelLocO = glGetUniformLocation(shadowShaderID, "m");
+
+		//iterates through entity meshes
+		auto& meshesO = entityManager.GetComponentsByType<CMesh>();
+		auto& transformsO = entityManager.GetComponentsByType<CTransform>();
+		for (int i = 0; i < meshesO.size();i++)
+		{
+			//check if object has mesh to draw
+			CMesh& entityMesh = meshesO[i];
+			if (entityMesh.exists)
+			{
+				CTransform& entityTransform = transformsO[i];
+
+				glm::mat4 model(1.0f);
+				if (entityTransform.exists)
+				{
+					model = glm::translate(model, entityTransform.position);
+					model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+					model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+					model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+					model = glm::scale(model, entityTransform.scale);
+				}
+
+				//sends model matrix 
+				glUniformMatrix4fv(modelLocO, 1, GL_FALSE, glm::value_ptr(model));
+
+				if (entityMesh.isInitialized == false)
+				{
+					entityMesh.initializeMesh();
+				}
+
+				glBindVertexArray(entityMesh.VAO);
+				glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
+			}
+		}
+	}
+}
+
+void Renderer::LightingPass(unsigned int windowWidth, unsigned int windowHeight, glm::mat4 proj, glm::mat4 view, EntityManager& entityManager)
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glViewport(0, 0, windowWidth, windowHeight);
+
+
+	glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+	ShadowBufferReadBind(GL_TEXTURE1);
+
+	Draw(proj, view, entityManager);
 }
 
 Renderer::~Renderer()

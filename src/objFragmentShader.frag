@@ -1,5 +1,9 @@
 #version 430 core
 
+layout(binding = 0) uniform sampler2D textureSampler;
+layout(binding = 1) uniform samplerCube shadowMapSampler;
+
+
 in vec3 Normal;
 in vec3 FragPos;
 
@@ -49,6 +53,27 @@ uniform SpotLight spotLights[24];
 uniform int maxSpotLights;
 
 
+const float farPlane = 25.0f;
+float calculateShadowPointLight(vec3 lightToPixel)
+{
+    float currentDepth = length(lightToPixel);
+
+    float closestDepth = texture(shadowMapSampler, lightToPixel).r;
+    closestDepth *= farPlane;
+
+
+    float bias = 0.05f;
+
+    if(currentDepth - bias < closestDepth)
+    {
+        return 1.0f;
+    }
+    else 
+    {
+        return 0.0f;
+    }
+}
+
 vec3 calculatePointLighting(PointLight light)
 {
     //Attenuation of light
@@ -86,7 +111,8 @@ vec3 calculatePointLighting(PointLight light)
     specular *= attenuation * light.intensity;
     diffuse *= attenuation * light.intensity;
 
-    vec3 result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    vec3 result = calculateShadowPointLight(FragPos - light.lightPos) * (ambient + diffuse + specular);
+
     return result;
 }
 
@@ -122,7 +148,7 @@ vec3 calculateDirectionalLighting(DirectionalLight light)
     specular *= light.intensity;
 
 
-    vec3 result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    vec3 result = (ambient + diffuse + specular);
     return result;
 }
 
@@ -162,7 +188,7 @@ vec3 calculateSpotLighting(SpotLight light)
     //ambient *= intensity;// * light.intensity;
 
 
-    result = (ambient + diffuse + specular);// * vec3(1.0f, 0.5f, 0.2f);  //object's color for now
+    result = (ambient + diffuse + specular);
 
     return result;
 
@@ -172,7 +198,6 @@ const float gamma = 1 / 2.2f;
 
 in vec2 TexCoord;
 
-uniform sampler2D textureSampler;
 
 void main()
 {

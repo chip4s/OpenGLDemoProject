@@ -252,6 +252,7 @@ public:
 	//bind Texture
 	void BindTexture()
 	{
+		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, m_TextureID);
 	}
 };

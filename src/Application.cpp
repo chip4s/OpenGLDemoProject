@@ -80,53 +80,62 @@ void Application::run()
 	Entity& entityOne = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityOne);
-	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -3.0f, 0.0f), glm::vec3(0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(-5.5f, -3.5f, 0.0f), glm::vec3(0.0f,90.0f,0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
 	entityManager.AddComponent<CTexture>(entityOne, "Textures/default.png");
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityTwo);
-	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	entityManager.AddComponent<CDirectionalLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 0.75f);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	entityManager.AddComponent<CPointLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 3.75f);
 
-	CTransform& entityTwoTrans = entityManager.GetComponentByEntity<CTransform>(entityTwo);
+
+
+	Entity& entityThree = entityManager.AddEntity("default");
+
+	entityManager.AddComponent<CMesh>(entityThree);
+	entityManager.AddComponent<CTransform>(entityThree, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+
+	CTransform& entityThreeTrans = entityManager.GetComponentByEntity<CTransform>(entityThree);
 
 	renderer.CompileShaders();
+	renderer.ShadowBufferInitialize();
 
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//activate shader before SENDING the uniforms
 
 		//3d matrices
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 10000.0f);
 		view = input.CreateViewMat();
 
-		glUseProgram(renderer.objShaderID);
+		renderer.ShadowPass(entityManager);
+
+		renderer.LightingPass(windowWidth, windowHeight, proj, view, entityManager);
+
 		renderer.HandlePointLights(input.cam.cameraPos, entityManager);
-		renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
-		renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
+		//renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
+		//renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
 
 
 		if (input.inputs[GLFW_KEY_UP])
 		{
-			entityTwoTrans.position.z += 0.3f;
+			entityThreeTrans.position.z += 0.05f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			entityTwoTrans.position.z += -0.3f;
+			entityThreeTrans.position.z += -0.05f;
 		}
 
 		if (input.inputs[GLFW_KEY_RIGHT])
 		{
-			entityTwoTrans.rotation.z += 0.3f;
+			entityThreeTrans.position.y += 0.05f;
 		}
 		if (input.inputs[GLFW_KEY_LEFT])
 		{
-			entityTwoTrans.rotation.z += -0.3f;
+			entityThreeTrans.position.y += -0.05f;
 		}
 
 
@@ -134,7 +143,7 @@ void Application::run()
 		input.handle_CameraMovement(deltaTime);
 
 		//draws and takes pv Uniforms
-		renderer.Draw(proj, view, entityManager);
+		//renderer.Draw(proj, view, entityManager);
 
 		this->CalculateDeltaTime();
 
