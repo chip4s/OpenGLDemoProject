@@ -34,6 +34,10 @@ public:
 	CTransform(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& size)
 		: position(pos), rotation(rot), scale(size) {}
 };
+enum Shapes : char
+{
+	CUBE,
+};
 class CMesh : public BaseComponent
 {
 private:
@@ -61,14 +65,11 @@ public:
 	bool isInitialized = false; //generated buffers?
 
 	//later constructor can take file path to load with assimp for now enum with shapes
-	enum Shapes
-	{
-		CUBE,
-	};
+	
 	Shapes meshShape = CUBE;//stores what kind of shape it is. Later might make shape its own component (physics?)
 
 	//constructor right now just makes a cube
-	CMesh()
+	CMesh(Shapes shape)
 	{
 		//first set up indices and vertices
 		indices.reserve(36);
@@ -114,6 +115,9 @@ public:
 		verts.push_back({ 0.5f, -0.5f, 0.5f,  0.0f, -1.0f, 0.0f,    1.0f, 1.0f});
 		verts.push_back({ 0.5f, -0.5f, -0.5f,  0.0f, -1.0f, 0.0f,    1.0f, 0.0f});
 	}
+	CMesh() {
+		exists = false; 
+	};
 	void initializeMesh()
 	{
 		//generate vaos and buffers
@@ -172,7 +176,83 @@ public:
 		: lightColor(color), linear(fallOffLin), quadratic(fallOffQuad), intensity(brightness) {}
 
 	CPointLight(glm::vec3 color, float brightness)//default attenuation
-		: lightColor(color), linear(0.09f), quadratic(0.032f), intensity(brightness) {
+		: lightColor(color), linear(0.09f), quadratic(0.032f), intensity(brightness) {}
+
+	//Shadow mapping things
+	glm::mat4 shadowPerspective = glm::mat4(1.0f);
+
+	GLuint shadowMapResolution = 0;
+	GLuint shadowCubeMap = 0;
+	GLuint shadowFBO = 0;
+	bool shadowMapIsInitialized = false;
+	float nearPlane = 0.0f;
+	float farPlane = 0.0f;
+
+
+	struct CubeDirection
+	{
+		GLenum cubeFace;
+		glm::vec3 target;
+		glm::vec3 up;
+	};
+	CubeDirection cameraDirections[6] =
+	{
+		{GL_TEXTURE_CUBE_MAP_POSITIVE_X, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{GL_TEXTURE_CUBE_MAP_NEGATIVE_X, glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{GL_TEXTURE_CUBE_MAP_POSITIVE_Y, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f,-1.0f)},
+		{GL_TEXTURE_CUBE_MAP_POSITIVE_Z, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+	};
+	
+	void ShadowBufferInitialize(GLuint shadowResolution, float near, float far)
+	{
+		//for now hard coded
+		nearPlane = 0.51f;
+		farPlane = 40.0f;
+		shadowMapResolution = 2048;
+		shadowPerspective = glm::perspective(glm::radians(90.0f), 1.0f, nearPlane, farPlane);
+
+
+		//create cube map to store depth textures in all directions
+		glGenTextures(1, &shadowCubeMap);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
+
+		for (int i = 0; i < 6; i++)
+		{
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32F, shadowMapResolution, shadowMapResolution, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		}
+
+		//Set texture settings for the cube map
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+
+		//create frame buffer for cube map
+		glGenFramebuffers(1, &shadowFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
+
+		//dont write/read into color buffer since shadows only need depth
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
+
+		shadowMapIsInitialized = true;
+	}
+	void ShadowBufferWriteBind(GLenum cubeFace)
+	{
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, shadowFBO);
+		glViewport(0, 0, shadowMapResolution, shadowMapResolution);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, cubeFace, shadowCubeMap, 0);
+		glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	}
+	void ShadowBufferReadBind(GLenum TextureUnit)
+	{
+		glActiveTexture(TextureUnit);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
 	}
 };
 class CDirectionalLight : public BaseComponent

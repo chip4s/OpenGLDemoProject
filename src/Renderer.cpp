@@ -7,7 +7,7 @@ Renderer::Renderer()
 
 
 	//resolution of shadow framebuffer
-	size = 1024;
+	size = 2048;
 }
 
 //sends light position uniform to obj frag shader for lighting
@@ -58,6 +58,11 @@ void Renderer::HandlePointLights(glm::vec3 camPos, EntityManager& entityManager)
 
 			glUniform3fv(LightColorLoc, 1, glm::value_ptr(entityPointLight.lightColor));
 
+
+			//send farPlane to objFragShader as a uniform
+			std::string FarPlaneStr = "pointLights[" + std::to_string(totalPointLights) + "].farPlane";
+			int FarPlaneLocO = glGetUniformLocation(objShaderID, FarPlaneStr.c_str());
+			glUniform1f(FarPlaneLocO, entityPointLight.farPlane);
 
 			totalPointLights++;
 		}
@@ -384,7 +389,7 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 void Renderer::ShadowBufferInitialize()
 {
 	//create perspective matrix
-	shadowPerspective = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 25.0f);
+	shadowPerspective = glm::perspective(glm::radians(90.0f), 1.0f, 0.51f, 40.0f);
 
 
 	//create cube map to store in all directions
@@ -413,12 +418,12 @@ void Renderer::ShadowBufferInitialize()
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << " not done\n\n";
-	}
+	//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	//{
+	//	//std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << " not done\n\n";
+	//}
 
-}
+};
 
 void Renderer::ShadowBufferWriteBind(GLenum cubeFace)
 {
@@ -437,73 +442,118 @@ void Renderer::ShadowBufferReadBind(GLenum TextureUnit)
 void Renderer::ShadowPass(EntityManager& entityManager)
 {
 	glUseProgram(shadowShaderID);
-
-	//uniform for light position as a vec3
-	//stand in values for now (HardCoded)
-	auto& entityTransforms = entityManager.GetComponentsByType<CTransform>();
-
-	glm::vec3 lightPos = entityTransforms[1].position;
-
-
-	int LightPosLoc = glGetUniformLocation(shadowShaderID, "lightPos");
-	glUniform3fv(LightPosLoc, 1, glm::value_ptr(lightPos));
-
-	glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
-
-	for (int i = 0; i < 6; i++)
+	
+	//First get list of pointLights to initialize shadow map
+	auto& allPointLights = entityManager.GetComponentsByType<CPointLight>();
+	for (int i = 0; i < allPointLights.size(); i++)
 	{
-		ShadowBufferWriteBind(cameraDirections[i].cubeFace);
-
-		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-
-		glm::mat4 lightView = glm::mat4(1.0f);
-		//UNSURE: add light pos to second parameter?
-		lightView = glm::lookAt(lightPos, lightPos + cameraDirections[i].target, cameraDirections[i].up);
-
-
-		//RENDER all meshes and set uniforms
-		//only M mat4
-		//pasted from draw method
-
-		int viewLocO = glGetUniformLocation(shadowShaderID, "v");
-		glUniformMatrix4fv(viewLocO, 1, GL_FALSE, glm::value_ptr(lightView));
-
-		int projLocO = glGetUniformLocation(shadowShaderID, "p");
-		glUniformMatrix4fv(projLocO, 1, GL_FALSE, glm::value_ptr(shadowPerspective));
-
-		int modelLocO = glGetUniformLocation(shadowShaderID, "m");
-
-		//iterates through entity meshes
-		auto& meshesO = entityManager.GetComponentsByType<CMesh>();
-		auto& transformsO = entityManager.GetComponentsByType<CTransform>();
-		for (int i = 0; i < meshesO.size();i++)
+		//cache point light
+		CPointLight& pointLight = allPointLights[i];
+		
+		//if it doesn't exist skip this iteration of the loop
+		if (pointLight.exists == false)
 		{
-			//check if object has mesh to draw
-			CMesh& entityMesh = meshesO[i];
-			if (entityMesh.exists)
+			continue;
+		}
+
+		//If pointLight's shadow map isn't initialized
+		if (pointLight.shadowMapIsInitialized == false)
+		{
+			//initializes fbo and cube map and sets isinitialized to true
+			pointLight.ShadowBufferInitialize(2048, 0.51f, 40.0f);
+		}
+		
+		
+		//Next send farplane to shadowFragShader as a uniform
+		int FarPlaneLocS = glGetUniformLocation(shadowShaderID, "farplane");
+		glUniform1f(FarPlaneLocS, pointLight.farPlane);
+
+
+		//then draw scenes to shadow shader on every cube face (6)
+
+
+		//cache point light's transform and postion
+		auto& entityTransforms = entityManager.GetComponentsByType<CTransform>();
+
+		auto& pointLightTransform = entityTransforms[i];
+
+		glm::vec3 lightPos = pointLightTransform.position;
+
+		//send point light's postion as light pos in this draw call
+		int LightPosLoc = glGetUniformLocation(shadowShaderID, "lightPos");
+		glUniform3fv(LightPosLoc, 1, glm::value_ptr(lightPos));
+
+		glClearColor(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
+		
+		//draws entire scene six times for each texture in cube map (6) 
+		for (int j = 0; j < 6; j++)
+		{
+			//bind shadow buffer so you draw to it
+			pointLight.ShadowBufferWriteBind(pointLight.cameraDirections[j].cubeFace);
+
+
+			//clear buffers
+			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+			//create a new view matrix to later send to shadow shader (per face)
+			glm::mat4 lightView = glm::mat4(1.0f);
+
+			lightView = glm::lookAt(lightPos,
+									lightPos + pointLight.cameraDirections[j].target,
+									pointLight.cameraDirections[j].up);
+
+
+			//RENDER all meshes and set uniforms
+			//only M mat4
+			//pasted from draw method
+
+			//send light's view matrix
+			int viewLocS = glGetUniformLocation(shadowShaderID, "v");
+			glUniformMatrix4fv(viewLocS, 1, GL_FALSE, glm::value_ptr(lightView));
+
+			//send perspective projection matrix from pointlight
+			int projLocS = glGetUniformLocation(shadowShaderID, "p");
+			glUniformMatrix4fv(projLocS, 1, GL_FALSE, glm::value_ptr(pointLight.shadowPerspective));
+
+			//send model matrix per object for every object you draw
+			int modelLocS = glGetUniformLocation(shadowShaderID, "m");
+
+			//iterates through entity meshes
+			auto& meshesS = entityManager.GetComponentsByType<CMesh>();
+			auto& transformsS = entityManager.GetComponentsByType<CTransform>();
+			for (int k = 0; k < meshesS.size();k++)
 			{
-				CTransform& entityTransform = transformsO[i];
-
-				glm::mat4 model(1.0f);
-				if (entityTransform.exists)
+				//check if object has mesh to draw
+				CMesh& entityMesh = meshesS[k];
+				if (entityMesh.exists)
 				{
-					model = glm::translate(model, entityTransform.position);
-					model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-					model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-					model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-					model = glm::scale(model, entityTransform.scale);
+					CTransform& entityTransform = transformsS[k];
+
+					//If entity/object has a transform, create a model matrix with its
+					//position, rotation, and scale from transform component
+					//else just send an identity matrix
+					glm::mat4 model(1.0f);
+					if (entityTransform.exists)
+					{
+						model = glm::translate(model, entityTransform.position);
+						model = glm::rotate(model, glm::radians(entityTransform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+						model = glm::rotate(model, glm::radians(entityTransform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+						model = glm::rotate(model, glm::radians(entityTransform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+						model = glm::scale(model, entityTransform.scale);
+					}
+
+					//sends model matrix 
+					glUniformMatrix4fv(modelLocS, 1, GL_FALSE, glm::value_ptr(model));
+
+					if (entityMesh.isInitialized == false)
+					{
+						entityMesh.initializeMesh();
+					}
+
+					//bind entity mesh VAO and draw the object
+					glBindVertexArray(entityMesh.VAO);
+					glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
 				}
-
-				//sends model matrix 
-				glUniformMatrix4fv(modelLocO, 1, GL_FALSE, glm::value_ptr(model));
-
-				if (entityMesh.isInitialized == false)
-				{
-					entityMesh.initializeMesh();
-				}
-
-				glBindVertexArray(entityMesh.VAO);
-				glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
 			}
 		}
 	}
@@ -511,6 +561,8 @@ void Renderer::ShadowPass(EntityManager& entityManager)
 
 void Renderer::LightingPass(unsigned int windowWidth, unsigned int windowHeight, glm::mat4 proj, glm::mat4 view, EntityManager& entityManager)
 {
+	glUseProgram(objShaderID);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glViewport(0, 0, windowWidth, windowHeight);
@@ -519,8 +571,55 @@ void Renderer::LightingPass(unsigned int windowWidth, unsigned int windowHeight,
 	glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//first send the 4 pointLights with shadows and an initialized cube map to
+	//objFragShader uniform shadowMapSampler
+	auto& allPointLights = entityManager.GetComponentsByType<CPointLight>();
 
-	ShadowBufferReadBind(GL_TEXTURE1);
+	//limit for how many point lights can have shadows (also in objFragShader)
+	int maxShadowCasters = 4;
+	//amount currently in loop of point lights casting shadows
+	int currentShadowCaster = 0;
+	
+
+	//Code to set textureUnits to each samplerCube in shadowMapSampler (could be moved out of loop)
+	int ShadowMapSamplerLoc = glGetUniformLocation(objShaderID, "shadowMapSampler");
+	//uses tex units 1 - 4
+	GLint texUnits[4] = {1, 2, 3, 4};
+	glUniform1iv(ShadowMapSamplerLoc, 4, texUnits);
+	int totalPointLights = 0;
+	for (int i = 0; i < allPointLights.size(); i++)
+	{
+		//Cache current point light
+		auto& pointLight = allPointLights[i];
+		
+		//checks if point light exists
+		if (pointLight.exists == false)
+		{
+			continue;
+		}
+
+		//checks there are already max shadow casters bound
+		if (currentShadowCaster == maxShadowCasters - 1)
+		{
+			continue;
+		}
+
+		//below code sets cube map index of pointLight
+		std::string cubeMapIndexStr = "pointLights[" + std::to_string(totalPointLights++) + "].cubeMapIndex";
+		int CubeMapIndexLoc = glGetUniformLocation(objShaderID, cubeMapIndexStr.c_str());
+
+		glUniform1i(CubeMapIndexLoc, currentShadowCaster);
+
+
+		//below code adds a shadow caster / binds its cubemap for reading to a certain unit
+		// 
+		//bind pointLight shadow buffer for reading
+		pointLight.ShadowBufferReadBind(GL_TEXTURE1 + currentShadowCaster);
+		currentShadowCaster++;
+	}
+
+	//after sending cubemap Textures of pointlight shadows
+	// draw the scene normally
 
 	Draw(proj, view, entityManager);
 }

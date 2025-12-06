@@ -21,16 +21,16 @@ void Input::key_Callback(GLFWwindow* window, int key, int scancode, int action, 
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDisable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        glFrontFace(GL_CCW);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CW);
 
     }
     if (inputs[GLFW_KEY_H])
     {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        glFrontFace(GL_CCW);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CW);
     }
 }
 void Input::handle_CameraMovement(float dt)
@@ -42,7 +42,7 @@ void Input::handle_CameraMovement(float dt)
     }
     else if (inputs[GLFW_KEY_LEFT_CONTROL])
     {
-        cameraSpeed = 3.0 * dt;
+        cameraSpeed = 1.5 * dt;
     }
     else
     {

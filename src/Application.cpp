@@ -54,8 +54,8 @@ Application::Application() : input(window)
 
 	//enables face culling
 	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
-	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glFrontFace(GL_CW);
 
 	//enables depth testing
 	glEnable(GL_DEPTH_TEST);
@@ -66,6 +66,10 @@ Application::Application() : input(window)
 
 	//makes images not upside down
 	stbi_set_flip_vertically_on_load(true);
+
+	//enables multi sampling for anti aliasing
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glEnable(GL_MULTISAMPLE);
 }
 void Application::run()
 {
@@ -75,29 +79,29 @@ void Application::run()
 	glm::mat4 proj = glm::mat4(1.0f);
 
 
-	EntityManager entityManager(20);
+	EntityManager entityManager(10);
 
 	Entity& entityOne = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityOne);
-	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(-5.5f, -3.5f, 0.0f), glm::vec3(0.0f,90.0f,0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
+	entityManager.AddComponent<CMesh>(entityOne, CUBE);
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -3.75f, 0.0f), glm::vec3(0.0f,00.0f,0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
 	entityManager.AddComponent<CTexture>(entityOne, "Textures/default.png");
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityTwo);
+	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
 	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	entityManager.AddComponent<CPointLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 3.75f);
-
+	entityManager.AddComponent<CPointLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 2.75f);
 
 
 	Entity& entityThree = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityThree);
-	entityManager.AddComponent<CTransform>(entityThree, glm::vec3(0.0f, -1.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	entityManager.AddComponent<CMesh>(entityThree, CUBE);
+	entityManager.AddComponent<CTransform>(entityThree, glm::vec3(0.0f, -3.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.1f, 1.0f));
 
 	CTransform& entityThreeTrans = entityManager.GetComponentByEntity<CTransform>(entityThree);
+
 
 	renderer.CompileShaders();
 	renderer.ShadowBufferInitialize();
@@ -111,9 +115,16 @@ void Application::run()
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 10000.0f);
 		view = input.CreateViewMat();
 
+	
+		//glCullFace(GL_FRONT);
+		glDisable(GL_CULL_FACE);
 		renderer.ShadowPass(entityManager);
+		glEnable(GL_CULL_FACE);
+		//glCullFace(GL_BACK);
 
+		
 		renderer.LightingPass(windowWidth, windowHeight, proj, view, entityManager);
+		
 
 		renderer.HandlePointLights(input.cam.cameraPos, entityManager);
 		//renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
@@ -122,20 +133,20 @@ void Application::run()
 
 		if (input.inputs[GLFW_KEY_UP])
 		{
-			entityThreeTrans.position.z += 0.05f;
+			entityThreeTrans.position.z += -0.1f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			entityThreeTrans.position.z += -0.05f;
+			entityThreeTrans.position.z += 0.1f;
 		}
 
 		if (input.inputs[GLFW_KEY_RIGHT])
 		{
-			entityThreeTrans.position.y += 0.05f;
+			entityThreeTrans.position.y += 0.01f;
 		}
 		if (input.inputs[GLFW_KEY_LEFT])
 		{
-			entityThreeTrans.position.y += -0.05f;
+			entityThreeTrans.position.y += -0.01f;
 		}
 
 

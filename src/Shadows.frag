@@ -5,13 +5,13 @@ in vec3 FragPos;
 uniform vec3 lightPos;
 
 
-const float farPlane = 25.0f;
+uniform float farplane;
 
 void main()
 {
 	float lightDistance = length(FragPos - lightPos);
 
-	lightDistance = lightDistance / farPlane;
+	lightDistance = lightDistance / farplane;
 
 	gl_FragDepth = lightDistance;
 }

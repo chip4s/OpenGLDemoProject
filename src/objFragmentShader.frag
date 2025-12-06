@@ -1,7 +1,10 @@
 #version 430 core
 
 layout(binding = 0) uniform sampler2D textureSampler;
-layout(binding = 1) uniform samplerCube shadowMapSampler;
+
+//only 4 pointlights can have shadows right now
+//Each cube map needs its own texture unit
+uniform samplerCube shadowMapSampler[4];
 
 
 in vec3 Normal;
@@ -23,6 +26,8 @@ struct PointLight
     float AttenLinear;
     float AttenQuad;
     float intensity;
+    float farPlane;
+    int cubeMapIndex;
 };
 uniform PointLight pointLights[24];
 uniform int maxPointLights;
@@ -52,26 +57,48 @@ struct SpotLight
 uniform SpotLight spotLights[24];
 uniform int maxSpotLights;
 
+//for pcf
+const vec3 gridSamplingDisk[20] = vec3[](
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
 
-const float farPlane = 25.0f;
-float calculateShadowPointLight(vec3 lightToPixel)
+
+float calculateShadowPointLight(vec3 FragPos, PointLight light)
 {
+    vec3 lightToPixel = FragPos - light.lightPos;
+
     float currentDepth = length(lightToPixel);
 
-    float closestDepth = texture(shadowMapSampler, lightToPixel).r;
-    closestDepth *= farPlane;
+    //float bias = max(0.05f * (1.0f - dot(normalize(Normal), light.lightPos - FragPos)), 0.2f);
+    //bias += 0.003f * length(lightToPixel);
+    float bias = 0.05f + distance(FragPos, light.lightPos) / 80.0f;
 
+    //float bias = 0.15f;
 
-    float bias = 0.05f;
+    //PCF actually
+    float shadow  = 20.0f;
+    int samples = 20;
+    float viewDistance = length(viewPos - FragPos);
+    float radius = (1.0f + (viewDistance / light.farPlane)) / 100.0f;  
 
-    if(currentDepth - bias < closestDepth)
+    for(int i = 0; i < samples; i++)
     {
-        return 1.0f;
+        float closestDepth = texture(shadowMapSampler[light.cubeMapIndex], lightToPixel + gridSamplingDisk[i] * radius).r;
+        closestDepth *= light.farPlane;
+
+        if(currentDepth > closestDepth + bias)
+        {
+            shadow -= 1.0f;
+        }
     }
-    else 
-    {
-        return 0.0f;
-    }
+
+    shadow = shadow / float(samples);
+
+    return shadow;
 }
 
 vec3 calculatePointLighting(PointLight light)
@@ -111,7 +138,10 @@ vec3 calculatePointLighting(PointLight light)
     specular *= attenuation * light.intensity;
     diffuse *= attenuation * light.intensity;
 
-    vec3 result = calculateShadowPointLight(FragPos - light.lightPos) * (ambient + diffuse + specular);
+    //vec3 result = calculateShadowPointLight(FragPos, light.lightPos) * (ambient + diffuse + specular);
+
+    float shadow = calculateShadowPointLight(FragPos, light);
+    vec3 result = shadow * (diffuse + specular) + ambient;
 
     return result;
 }
