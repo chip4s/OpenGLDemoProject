@@ -84,27 +84,20 @@ void Application::run()
 	Entity& entityOne = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
-	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -3.75f, 0.0f), glm::vec3(0.0f,00.0f,0.0f), glm::vec3(100.0f, 1.0f, 100.0f));
-	entityManager.AddComponent<CTexture>(entityOne, "Textures/default.png");
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CBoxCollider>(entityOne, 1, 1, 1);
+	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
-	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	entityManager.AddComponent<CPointLight>(entityTwo, glm::vec3(1.0f, 1.0f, 1.0f), 2.75f);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
+	entityManager.AddComponent<CBoxCollider>(entityTwo, 10, 0.25f, 10);
 
-
-	Entity& entityThree = entityManager.AddEntity("default");
-
-	entityManager.AddComponent<CMesh>(entityThree, CUBE);
-	entityManager.AddComponent<CTransform>(entityThree, glm::vec3(0.0f, -3.5f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.1f, 1.0f));
-
-	CTransform& entityThreeTrans = entityManager.GetComponentByEntity<CTransform>(entityThree);
-
+	CTransform& entityTwoTrans = entityManager.GetComponentByEntity<CTransform>(entityTwo);
 
 	renderer.CompileShaders();
-	renderer.ShadowBufferInitialize();
 
 
 	while (!glfwWindowShouldClose(window))
@@ -127,27 +120,39 @@ void Application::run()
 		
 
 		renderer.HandlePointLights(input.cam.cameraPos, entityManager);
-		//renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
-		//renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
+		renderer.HandleDirectionalLights(input.cam.cameraPos, entityManager);
+		renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
 
 
-		if (input.inputs[GLFW_KEY_UP])
-		{
-			entityThreeTrans.position.z += -0.1f;
-		}
-		if (input.inputs[GLFW_KEY_DOWN])
-		{
-			entityThreeTrans.position.z += 0.1f;
-		}
 
 		if (input.inputs[GLFW_KEY_RIGHT])
 		{
-			entityThreeTrans.position.y += 0.01f;
+			entityTwoTrans.position.x += 0.01f;
 		}
 		if (input.inputs[GLFW_KEY_LEFT])
 		{
-			entityThreeTrans.position.y += -0.01f;
+			entityTwoTrans.position.x += -0.01f;
 		}
+		if (input.inputs[GLFW_KEY_UP])
+		{
+			entityTwoTrans.position.y += 0.01f;
+		}
+		if (input.inputs[GLFW_KEY_DOWN])
+		{
+			entityTwoTrans.position.y += -0.01f;
+		}
+		if (input.inputs[GLFW_KEY_I])
+		{
+			entityTwoTrans.position.z += -0.01f;
+		}
+		if (input.inputs[GLFW_KEY_K])
+		{
+			entityTwoTrans.position.z += 0.01f;
+		}
+
+
+		//handles physic collisions
+		physics.CheckBoxCollisions(entityManager);
 
 
 		//input stuff

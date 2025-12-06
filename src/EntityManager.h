@@ -14,7 +14,8 @@ using ComponentVectors = std::tuple
 	std::vector<CPointLight>,
 	std::vector<CDirectionalLight>,
 	std::vector<CSpotLight>,
-	std::vector<CTexture>
+	std::vector<CTexture>,
+	std::vector<CBoxCollider>
 >;
 
 class EntityManager

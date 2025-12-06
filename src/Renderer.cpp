@@ -386,58 +386,6 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 	}
 }
 
-void Renderer::ShadowBufferInitialize()
-{
-	//create perspective matrix
-	shadowPerspective = glm::perspective(glm::radians(90.0f), 1.0f, 0.51f, 40.0f);
-
-
-	//create cube map to store in all directions
-	glGenTextures(1, &shadowCubeMap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
-
-	for (int i = 0; i < 6; i++)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT32F, size, size, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	}
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-
-	//create frame buffer
-	glGenFramebuffers(1, &FBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	//glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowCubeMap, 0);
-
-
-	//don't write or read color buffer
-	glDrawBuffer(GL_NONE);
-	glReadBuffer(GL_NONE);
-
-	//if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	//{
-	//	//std::cout << glCheckFramebufferStatus(GL_FRAMEBUFFER) << " not done\n\n";
-	//}
-
-};
-
-void Renderer::ShadowBufferWriteBind(GLenum cubeFace)
-{
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, FBO);
-	glViewport(0, 0, size, size);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, cubeFace, shadowCubeMap, 0);
-	glDrawBuffer(GL_COLOR_ATTACHMENT0);
-}
-
-void Renderer::ShadowBufferReadBind(GLenum TextureUnit)
-{
-	glActiveTexture(TextureUnit);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, shadowCubeMap);
-}
 
 void Renderer::ShadowPass(EntityManager& entityManager)
 {

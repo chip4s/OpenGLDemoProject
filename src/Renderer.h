@@ -62,9 +62,7 @@ class Renderer
 			{GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
 		};
 		glm::mat4 shadowPerspective;
-		void ShadowBufferInitialize();
-		void ShadowBufferWriteBind(GLenum cubeFace);
-		void ShadowBufferReadBind(GLenum TextureUnit);
+
 		void ShadowPass(EntityManager& entityManager);
 
 		void LightingPass(unsigned int windowWidth, unsigned int windowHeight, glm::mat4 proj, glm::mat4 view, EntityManager& entityManager);

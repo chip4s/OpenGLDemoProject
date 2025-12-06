@@ -6,6 +6,7 @@
 #include<string>
 #include<iostream>
 #include "Renderer.h"
+#include "Physics.h"
 #include "Input.h"
 class Application
 {
@@ -17,6 +18,7 @@ class Application
 	   unsigned int windowHeight;
 	   GLFWwindow* window;
 	   Renderer renderer;
+	   Physics physics;
 	   Input input;
 	private:
 		//time

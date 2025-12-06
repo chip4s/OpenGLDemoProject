@@ -336,5 +336,19 @@ public:
 		glBindTexture(GL_TEXTURE_2D, m_TextureID);
 	}
 };
-
+class CBoxCollider : public BaseComponent
+{
+public:
+	float width = 0.0f;//x extents
+	float height = 0.0f;//y extents
+	float length = 0.0f;//z extents
+	CBoxCollider() {};
+	
+	CBoxCollider(int w, int h, int l)
+	{
+		width = w;
+		height = h;
+		length = l;
+	}
+};
 #endif
