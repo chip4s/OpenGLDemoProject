@@ -1,13 +1,58 @@
 #include "Physics.h"
 
 
-void Physics::CheckBoxCollisions(EntityManager& entityManager)
+void Physics::HandleRigidBodies(EntityManager& entityManager, float dT)
+{
+	// get list of rigid bodies and transforms
+	auto& allRigidBodies = entityManager.GetComponentsByType<CRigidBody>();
+	auto& allTransforms = entityManager.GetComponentsByType<CTransform>();
+
+	//iterate through this list
+	for (int i = 0; i < allRigidBodies.size(); i++)
+	{
+		//cache current rigid body and transform
+		CRigidBody& rigidBody = allRigidBodies[i];
+		CTransform& transform = allTransforms[i];
+
+		//skip an iteration if either comp. does not exist
+		if (rigidBody.exists == false || transform.exists == false)
+		{
+			continue;
+		}
+
+
+		
+		if (rigidBody.dynamic == true)
+		{
+			//std::cout << glm::to_string(rigidBody.acceleration) << " is acceleration\n\n";
+			//std::cout << glm::to_string(rigidBody.velocity) << " is velocity\n\n";
+			
+
+			//rigidBody.netForce.y = 0.0f;
+			
+
+			//net Force / mass = acceleration
+			rigidBody.acceleration = (rigidBody.netForce / rigidBody.mass) * dT;//later could set mass to inverse mass to use * not /
+
+			//add acceleration to velocity
+			rigidBody.velocity += rigidBody.acceleration * dT;
+
+			//add velocity to position
+			transform.position += rigidBody.velocity * dT;
+		}
+	}
+}
+
+void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 {
 	//get all box collider comp.s
 	auto& allBoxColliders = entityManager.GetComponentsByType<CBoxCollider>();
 	
 	//get all transform comp.s
 	auto& allTransforms = entityManager.GetComponentsByType<CTransform>();
+
+	//get all rigid body comp.s
+	auto& allRigidBodies = entityManager.GetComponentsByType<CRigidBody>();
 
 	for (int i = 0; i < allBoxColliders.size(); i++)
 	{
@@ -95,7 +140,78 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager)
 			//check collision on all axis
 			if (collidingX && collidingY && collidingZ)
 			{
-				std::cout << "is colliding\n\n";
+				if (!allRigidBodies[i].dynamic)
+					continue;
+
+				//Collision resolution
+
+				//find mag. needed to move in the y-axis to stop colliding
+				float yChange = 0.0f;
+				
+				if (transformOne.position.y >= transformTwo.position.y)
+				{
+					//objOne is above objTwo
+					yChange = std::abs(maxYTwo) - std::abs(minYOne);
+				}
+				else
+				{
+					//objOne is below objTwo
+					yChange = std::abs(maxYOne) - std::abs(minYTwo);
+				}
+				
+				
+				//find mag. needed to move in the x-axis stop colliding
+				float xChange = 0.0f;
+
+				if (transformOne.position.x >= transformTwo.position.x)
+				{
+					//objOne is to the right of objTwo
+					xChange = std::abs(maxXTwo) - std::abs(minXOne);
+				}
+				else
+				{
+					//objOne is to the left of objTwo
+					xChange = std::abs(maxXOne) - std::abs(minXTwo);
+				}
+
+
+				//find mag. needed to move in the x-axis stop colliding
+				float zChange = 0.0f;
+
+				if (transformOne.position.z >= transformTwo.position.z)
+				{
+					//objOne is in front of objTwo
+					zChange = std::abs(maxZTwo) - std::abs(minZOne);
+				}
+				else
+				{
+					//objOne is behind objTwo
+					zChange = std::abs(maxZOne) - std::abs(minZTwo);
+				}
+
+				
+				float posDifferenceY = std::abs(transformOne.position.y - transformTwo.position.y);
+				float posDifferenceX = std::abs(transformOne.position.x - transformTwo.position.x);
+				float posDifferenceZ = std::abs(transformOne.position.z - transformTwo.position.z);
+				if (posDifferenceY > posDifferenceX && posDifferenceY > posDifferenceZ)
+				{
+					std::cout << "y collision\n";
+					transformOne.position.y += yChange;
+				}
+				if (posDifferenceX > posDifferenceY && posDifferenceX > posDifferenceZ)
+				{
+					std::cout << "x collision\n";
+					transformOne.position.x += xChange;
+				}
+				if (posDifferenceZ > posDifferenceX && posDifferenceZ > posDifferenceY)
+				{
+					std::cout << "z collision\n";
+					transformOne.position.z += zChange;
+				}
+				//std::cout << std::abs(xChange) << " : xChange\n";
+				//std::cout << std::abs(yChange) << " : yChange\n";
+				//std::cout << std::abs(zChange) << " : zChange\n";
+				
 			}
 		}
 	}

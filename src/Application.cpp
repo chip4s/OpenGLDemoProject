@@ -84,18 +84,20 @@ void Application::run()
 	Entity& entityOne = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
-	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	entityManager.AddComponent<CBoxCollider>(entityOne, 1, 1, 1);
+	entityManager.AddComponent<CRigidBody>(entityOne, true, 1.0f);
 	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
-	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(10.0f, 0.25f, 10.0f));
-	entityManager.AddComponent<CBoxCollider>(entityTwo, 10, 0.25f, 10);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CBoxCollider>(entityTwo, 1, 1, 1);
+	entityManager.AddComponent<CRigidBody>(entityTwo, false, 0.0f);
 
-	CTransform& entityTwoTrans = entityManager.GetComponentByEntity<CTransform>(entityTwo);
+	CTransform& entityOneRB = entityManager.GetComponentByEntity<CTransform>(entityOne);
 
 	renderer.CompileShaders();
 
@@ -127,33 +129,39 @@ void Application::run()
 
 		if (input.inputs[GLFW_KEY_RIGHT])
 		{
-			entityTwoTrans.position.x += 0.01f;
+			entityOneRB.position.x += 0.01f;
 		}
 		if (input.inputs[GLFW_KEY_LEFT])
 		{
-			entityTwoTrans.position.x += -0.01f;
+			entityOneRB.position.x += -0.01f;
 		}
 		if (input.inputs[GLFW_KEY_UP])
 		{
-			entityTwoTrans.position.y += 0.01f;
+			entityOneRB.position.y += 0.01f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			entityTwoTrans.position.y += -0.01f;
+			entityOneRB.position.y += -0.01f;
 		}
 		if (input.inputs[GLFW_KEY_I])
 		{
-			entityTwoTrans.position.z += -0.01f;
+			entityOneRB.position.z += -0.01f;
 		}
 		if (input.inputs[GLFW_KEY_K])
 		{
-			entityTwoTrans.position.z += 0.01f;
+			entityOneRB.position.z += 0.01f;
+		}
+
+		//pause everything
+		while (input.inputs[GLFW_KEY_P])
+		{
+			glfwPollEvents();
 		}
 
 
-		//handles physic collisions
-		physics.CheckBoxCollisions(entityManager);
-
+		//handle physics
+		physics.HandleRigidBodies(entityManager, deltaTime);
+		physics.CheckBoxCollisions(entityManager, deltaTime);
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);

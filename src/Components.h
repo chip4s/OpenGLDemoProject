@@ -351,4 +351,22 @@ public:
 		length = l;
 	}
 };
+
+class CRigidBody : public BaseComponent
+{
+public:
+	bool dynamic = false;
+	CRigidBody() {};
+	CRigidBody(bool moves, float m) 
+		: dynamic(moves), mass(m) {
+	
+	};
+	
+	//Rigid body comp.s (Add when I need more)
+	//transform has position
+	glm::vec3 velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 netForce = glm::vec3(0.0f, 0.0f, 0.0f);
+	float mass = 0.0f;
+};
 #endif
