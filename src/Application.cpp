@@ -86,7 +86,7 @@ void Application::run()
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
 	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 	entityManager.AddComponent<CBoxCollider>(entityOne, 10.0f, 1.0f, 10.0f);
-	entityManager.AddComponent<CRigidBody>(entityOne, false, 1.0f, -0.0098);
+	entityManager.AddComponent<CRigidBody>(entityOne, false, 1.0f, -40.0f);
 	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
 
@@ -95,15 +95,15 @@ void Application::run()
 	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
 	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
 	entityManager.AddComponent<CBoxCollider>(entityTwo, 1.0f, 1.0f, 1.0f);
-	entityManager.AddComponent<CRigidBody>(entityTwo, true, 1.0f, -0.0098);
-
-	CTransform& entityOneRB = entityManager.GetComponentByEntity<CTransform>(entityTwo);
+	entityManager.AddComponent<CRigidBody>(entityTwo, true, 1.0f, -40.0f);
+	
+	CRigidBody& entityTwoRB = entityManager.GetComponentByEntity<CRigidBody>(entityTwo);
 
 	renderer.CompileShaders();
 
 
 	//runs physics functions more/less () needs to be 1 or above
-	physics.accuracy = 1000;
+	physics.accuracy = 10;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -132,27 +132,27 @@ void Application::run()
 
 		if (input.inputs[GLFW_KEY_RIGHT])
 		{
-			entityOneRB.position.x += 0.01f;
+			entityTwoRB.netForce.x += 1.0f;
 		}
 		if (input.inputs[GLFW_KEY_LEFT])
 		{
-			entityOneRB.position.x += -0.01f;
+			entityTwoRB.netForce.x += -1.0f;
 		}
 		if (input.inputs[GLFW_KEY_UP])
 		{
-			entityOneRB.position.y += 0.01f;
+			entityTwoRB.netForce.y += 1.0f;
 		}
 		if (input.inputs[GLFW_KEY_DOWN])
 		{
-			entityOneRB.position.y += -0.01f;
+			entityTwoRB.netForce.y += -1.0f;
 		}
 		if (input.inputs[GLFW_KEY_I])
 		{
-			entityOneRB.position.z += -0.01f;
+			entityTwoRB.netForce.z += -1.0f;
 		}
 		if (input.inputs[GLFW_KEY_K])
 		{
-			entityOneRB.position.z += 0.01f;
+			entityTwoRB.netForce.z += 1.0f;
 		}
 
 		//pause everything
