@@ -358,9 +358,11 @@ public:
 	//statics push other statics and dynamics
 	//dynamics push other dynamics
 	bool dynamic = false;
+	//each rb has own gravity
+	float gravity = 0.0f;
 	CRigidBody() {};
-	CRigidBody(bool moves, float m) 
-		: dynamic(moves), mass(m) {
+	CRigidBody(bool moves, float m, float g) 
+		: dynamic(moves), mass(m), gravity(g) {
 	
 	};
 	

@@ -8,10 +8,10 @@
 class Physics
 {
 private:
-	float gravity = -98.0f;
+	
 public:
 	Physics() {};
-
+	int accuracy = 1;
 	void HandleRigidBodies(EntityManager& entityManager, float dT);
 	void CheckBoxCollisions(EntityManager& entityManager, float dT);
 

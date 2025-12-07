@@ -27,12 +27,13 @@ void Physics::HandleRigidBodies(EntityManager& entityManager, float dT)
 			//std::cout << glm::to_string(rigidBody.acceleration) << " is acceleration\n\n";
 			//std::cout << glm::to_string(rigidBody.velocity) << " is velocity\n\n";
 			
-
-			//rigidBody.netForce.y = 0.0f;
+			//apply gravity
+			rigidBody.netForce.y = rigidBody.mass * rigidBody.gravity;
 			
 
 			//net Force / mass = acceleration
 			rigidBody.acceleration = (rigidBody.netForce / rigidBody.mass) * dT;//later could set mass to inverse mass to use * not /
+
 
 			//add acceleration to velocity
 			rigidBody.velocity += rigidBody.acceleration * dT;
@@ -193,51 +194,59 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 				float posDifferrenceY = std::abs(transformOne.position.y - transformTwo.position.y) - boxColliderOne.height * 0.5f - boxColliderTwo.height * 0.5f;
 				float posDifferrenceX = std::abs(transformOne.position.x - transformTwo.position.x) - boxColliderOne.width * 0.5f - boxColliderTwo.width * 0.5f;
 				float posDifferrenceZ = std::abs(transformOne.position.z - transformTwo.position.z) - boxColliderOne.length * 0.5f - boxColliderTwo.length * 0.5f;
+
+
+				CRigidBody& rbOne = allRigidBodies[i];
+				CRigidBody& rbTwo = allRigidBodies[j];
+
 				if (posDifferrenceY > posDifferrenceX && posDifferrenceY > posDifferrenceZ)
 				{
 					//std::cout << "y collision\n";
-					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
 					{
 						transformOne.position.y += yChange * 0.5f;
 						transformTwo.position.y += -yChange * 0.5f;
 					}
-					else if (allRigidBodies[i].dynamic == true)
+					else if (rbOne.dynamic == true) //collision between one moving and one static object
 					{
 						transformOne.position.y += yChange;
+
+						rbOne.netForce.y = 0.0f;
+						rbOne.velocity.y = 0.0f;
 					}
-					else
+					else //one static and one moving (reversed)
 					{
 						transformTwo.position.y += -yChange;
 					}
 				}
 				if (posDifferrenceX > posDifferrenceY && posDifferrenceX > posDifferrenceZ)
 				{
-					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
 					{
 						transformOne.position.x += xChange * 0.5f;
 						transformTwo.position.x += -xChange * 0.5f;
 					}
-					else if (allRigidBodies[i].dynamic == true)
+					else if (rbOne.dynamic == true) //collision between one moving and one static object
 					{
 						transformOne.position.x += xChange;
 					}
-					else
+					else //one static and one moving (reversed)
 					{
 						transformTwo.position.x += -xChange;
 					}
 				}
 				if (posDifferrenceZ > posDifferrenceX && posDifferrenceZ > posDifferrenceY)
 				{
-					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
 					{
 						transformOne.position.z += zChange * 0.5f;
 						transformTwo.position.z += -zChange * 0.5f;
 					}
-					else if (allRigidBodies[i].dynamic == true)
+					else if (rbOne.dynamic == true)//collision between one moving and one static object
 					{
 						transformOne.position.z += zChange;
 					}
-					else
+					else //one static and one moving (reversed)
 					{
 						transformTwo.position.z += -zChange;
 					}

@@ -84,23 +84,26 @@ void Application::run()
 	Entity& entityOne = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
-	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(1.5f, 2.0f, 3.0f));
-	entityManager.AddComponent<CBoxCollider>(entityOne, 1.5f, 2.0f, 3.0f);
-	entityManager.AddComponent<CRigidBody>(entityOne, false, 1.0f);
+	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
+	entityManager.AddComponent<CBoxCollider>(entityOne, 10.0f, 1.0f, 10.0f);
+	entityManager.AddComponent<CRigidBody>(entityOne, false, 1.0f, -0.0098);
 	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
 
 	Entity& entityTwo = entityManager.AddEntity("default");
 
 	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
-	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(2.0f, 0.5f, 1.0f));
-	entityManager.AddComponent<CBoxCollider>(entityTwo, 2.0f, 0.5f, 1.0f);
-	entityManager.AddComponent<CRigidBody>(entityTwo, true, 1.0f);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CBoxCollider>(entityTwo, 1.0f, 1.0f, 1.0f);
+	entityManager.AddComponent<CRigidBody>(entityTwo, true, 1.0f, -0.0098);
 
 	CTransform& entityOneRB = entityManager.GetComponentByEntity<CTransform>(entityTwo);
 
 	renderer.CompileShaders();
 
+
+	//runs physics functions more/less () needs to be 1 or above
+	physics.accuracy = 1000;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -160,8 +163,11 @@ void Application::run()
 
 
 		//handle physics
-		physics.HandleRigidBodies(entityManager, deltaTime);
-		physics.CheckBoxCollisions(entityManager, deltaTime);
+		for (int i = 0; i < physics.accuracy;i++)
+		{
+			physics.HandleRigidBodies(entityManager, deltaTime);
+			physics.CheckBoxCollisions(entityManager, deltaTime);
+		}
 
 		//input stuff
 		input.handle_CameraMovement(deltaTime);
