@@ -34,6 +34,8 @@ public:
 	CTransform(const glm::vec3& pos, const glm::vec3& rot, const glm::vec3& size)
 		: position(pos), rotation(rot), scale(size) {}
 };
+
+//for mesh
 enum Shapes : char
 {
 	CUBE,
@@ -118,7 +120,7 @@ public:
 	CMesh() {
 		exists = false; 
 	};
-	void initializeMesh()
+	void initializeBuffers()
 	{
 		//generate vaos and buffers
 		
@@ -330,9 +332,9 @@ public:
 	}
 
 	//bind Texture
-	void BindTexture()
+	void BindTexture(GLenum TexUnit)
 	{
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(TexUnit);
 		glBindTexture(GL_TEXTURE_2D, m_TextureID);
 	}
 };
@@ -351,26 +353,108 @@ public:
 		length = l;
 	}
 };
-
+enum RigidBodyType : char
+{
+	STATIC,
+	DYNAMIC,
+};
 class CRigidBody : public BaseComponent
 {
 public:
 	//statics push other statics and dynamics
 	//dynamics push other dynamics
-	bool dynamic = false;
+	RigidBodyType type = STATIC;
 	//each rb has own gravity
 	float gravity = 0.0f;
 	CRigidBody() {};
-	CRigidBody(bool moves, float m, float g) 
-		: dynamic(moves), mass(m), gravity(g) {
+	CRigidBody(RigidBodyType Type, float m, float g) 
+		: type(Type), mass(m), gravity(g) {};
 	
-	};
-	
+
 	//Rigid body comp.s (Add when I need more)
 	//transform has position
 	glm::vec3 velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 acceleration = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 netForce = glm::vec3(0.0f, 0.0f, 0.0f);
 	float mass = 0.0f;
+};
+class CUI : public BaseComponent
+{
+
+private:
+	struct UIVertex
+	{
+		float xPos;
+		float yPos;
+		float zPos;
+
+		float xTex;
+		float yTex;
+	};
+	std::vector<UIVertex> UIVertices;
+
+public:
+	//could drawTriangle strips for no indices but may be a different shape later
+	std::vector<GLuint> indices;
+
+	bool isInitialized = false;
+	GLuint VAO = 0;
+	GLuint VBO = 0;
+	GLuint EBO = 0;
+	CUI() {};
+
+	//I want it to have parameters later but I can't think of any so int set to nothing
+	CUI(int redundantRightNow)
+	{
+		//set up indices for a square
+		indices = std::vector<GLuint>
+		{
+			0, 1, 2,
+			2, 3, 0
+		};
+		
+		//set up vertices for a square
+		//right now covers entire screen without scaling
+		UIVertices = std::vector<UIVertex>
+		{
+			//3 for Pos          //2 for Texcoords
+			{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f},
+			{-1.0f,  1.0f, 0.0f, 0.0f, 1.0f},
+			{ 1.0f,  1.0f, 0.0f, 1.0f, 1.0f},
+			{ 1.0f, -1.0f, 0.0f, 1.0f, 0.0f},
+		};
+	};
+
+	//initialized buffers
+	void initializeBuffers()
+	{
+		//generate vaos and buffers
+
+		//generates the vao
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+		//generates the vbo
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		glBufferData(GL_ARRAY_BUFFER, 5 * sizeof(float) * UIVertices.size(), UIVertices.data(), GL_STATIC_DRAW);
+
+		//sets attribute pointers
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+
+
+		//generates ebo
+		glGenBuffers(1, &EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indices.size(), indices.data(), GL_STATIC_DRAW);
+
+		isInitialized = true;
+	};
+
+
+
 };
 #endif

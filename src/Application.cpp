@@ -79,6 +79,7 @@ void Application::run()
 	glm::mat4 proj = glm::mat4(1.0f);
 
 
+
 	EntityManager entityManager(10);
 
 	Entity& entityOne = entityManager.AddEntity("default");
@@ -86,23 +87,27 @@ void Application::run()
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
 	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 	entityManager.AddComponent<CBoxCollider>(entityOne, 10.0f, 1.0f, 10.0f);
-	entityManager.AddComponent<CRigidBody>(entityOne, false, 1.0f, -40.0f);
+	entityManager.AddComponent<CRigidBody>(entityOne, STATIC, 1.0f, -40.0f);
 	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
 
 
-	Entity& entityTwo = entityManager.AddEntity("default");
 
-	entityManager.AddComponent<CMesh>(entityTwo, CUBE);
-	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-	entityManager.AddComponent<CBoxCollider>(entityTwo, 1.0f, 1.0f, 1.0f);
-	entityManager.AddComponent<CRigidBody>(entityTwo, true, 1.0f, -40.0f);
-	
-	CRigidBody& entityTwoRB = entityManager.GetComponentByEntity<CRigidBody>(entityTwo);
+	Entity& entityTwo = entityManager.AddEntity("UI");
+
+	entityManager.AddComponent<CUI>(entityTwo, -1);
+	entityManager.AddComponent<CTransform>(entityTwo, glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CTexture>(entityTwo, "Textures/HelloWorldUI.png");
+
+
+
+	Entity& entityThree = entityManager.AddEntity("default");
+	entityManager.AddComponent<CMesh>(entityThree, CUBE);
 
 
 
 	renderer.CompileShaders("objVertexShader.vert", "objFragmentShader.frag", renderer.objShaderID);
 	renderer.CompileShaders("Shadows.vert", "Shadows.frag", renderer.shadowShaderID);
+	renderer.CompileShaders("UIShader.vert", "UIShader.frag", renderer.UIShaderID);
 
 
 	//runs physics functions more/less () needs to be 1 or above
@@ -114,6 +119,7 @@ void Application::run()
 
 		//3d matrices
 		proj = glm::perspective(glm::radians(45.0f), (float)windowWidth / windowHeight, 0.1f, 10000.0f);
+
 		view = input.CreateViewMat();
 
 	
@@ -132,31 +138,8 @@ void Application::run()
 		renderer.HandleSpotLights(input.cam.cameraPos, entityManager);
 
 
+		renderer.DrawUI(entityManager);
 
-		if (input.inputs[GLFW_KEY_RIGHT])
-		{
-			entityTwoRB.netForce.x += 1.0f;
-		}
-		if (input.inputs[GLFW_KEY_LEFT])
-		{
-			entityTwoRB.netForce.x += -1.0f;
-		}
-		if (input.inputs[GLFW_KEY_UP])
-		{
-			entityTwoRB.netForce.y += 1.0f;
-		}
-		if (input.inputs[GLFW_KEY_DOWN])
-		{
-			entityTwoRB.netForce.y += -1.0f;
-		}
-		if (input.inputs[GLFW_KEY_I])
-		{
-			entityTwoRB.netForce.z += -1.0f;
-		}
-		if (input.inputs[GLFW_KEY_K])
-		{
-			entityTwoRB.netForce.z += 1.0f;
-		}
 
 		//pause everything
 		while (input.inputs[GLFW_KEY_P])

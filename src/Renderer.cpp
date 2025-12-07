@@ -331,16 +331,76 @@ void Renderer::Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager
 
 			if (entityMesh.isInitialized == false)
 			{
-				entityMesh.initializeMesh();
+				entityMesh.initializeBuffers();
 			}
 			if (entityTexture.isLoaded == false)
 			{
 				entityTexture.LoadTexture();
 			}
-			entityTexture.BindTexture();
+			entityTexture.BindTexture(GL_TEXTURE0);
 			glBindVertexArray(entityMesh.VAO);
 			glDrawElements(GL_TRIANGLES, entityMesh.indices.size(), GL_UNSIGNED_INT, 0);
 		}
+	}
+}
+
+void Renderer::DrawUI(EntityManager& entityManager)
+{
+	//use UI shader
+	glUseProgram(UIShaderID);
+
+	//get uniform model matrix location in UI shader
+	int modelLocUI = glGetUniformLocation(UIShaderID, "m");
+
+
+	//get all comp.s needed
+	auto& allTransforms = entityManager.GetComponentsByType<CTransform>();
+	auto& allTextures = entityManager.GetComponentsByType<CTexture>();
+	auto& allUIs = entityManager.GetComponentsByType<CUI>();
+
+	//iterate through comp. list
+	for (int i = 0; i < allUIs.size(); i++)
+	{
+		//check if entity has UI comp.
+		CUI& UI = allUIs[i];
+		if (UI.exists == false)
+			continue;
+		
+		CTransform& transform = allTransforms[i];
+		CTexture& texture = allTextures[i];
+
+		
+		//create and send model matrix based on transform comp.
+
+		//create model matrix
+		glm::mat4 model(1.0f);
+		if (transform.exists)
+		{
+			model = glm::translate(model, transform.position);
+			model = glm::rotate(model, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			model = glm::rotate(model, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			model = glm::rotate(model, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+			model = glm::scale(model, transform.scale);
+		}
+
+		//send model matrix to Ui shader
+		glUniformMatrix4fv(modelLocUI, 1, GL_FALSE, glm::value_ptr(model));
+
+
+		//initialize UI buffers and textures if not initialized
+		if (UI.isInitialized == false)
+		{
+			UI.initializeBuffers();
+		}
+		if (texture.isLoaded == false)
+		{
+			texture.LoadTexture();
+		}
+
+		//bind texture and draw
+		texture.BindTexture(GL_TEXTURE8);
+		glBindVertexArray(UI.VAO);
+		glDrawElements(GL_TRIANGLES, UI.indices.size(), GL_UNSIGNED_INT, 0);
 	}
 }
 
@@ -453,7 +513,7 @@ void Renderer::ShadowPass(EntityManager& entityManager)
 
 					if (entityMesh.isInitialized == false)
 					{
-						entityMesh.initializeMesh();
+						entityMesh.initializeBuffers();
 					}
 
 					//bind entity mesh VAO and draw the object

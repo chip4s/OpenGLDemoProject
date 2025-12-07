@@ -14,13 +14,15 @@ class Application
 		Application();
 		void run();
 	   ~Application();
-	   unsigned int windowWidth;
-	   unsigned int windowHeight;
-	   GLFWwindow* window;
-	   Renderer renderer;
-	   Physics physics;
-	   Input input;
+	
 	private:
+		unsigned int windowWidth;
+		unsigned int windowHeight;
+		GLFWwindow* window;
+		Renderer renderer;
+		Physics physics;
+		Input input;
+
 		//time
 		void CalculateDeltaTime();
 		double deltaTime;

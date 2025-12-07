@@ -69,5 +69,12 @@
   <ItemGroup>
     <None Include="src\Shadows.frag" />
     <None Include="src\Shadows.vert" />
+    <None Include="src\UIShader.vert" />
+    <None Include="src\UIShader.frag" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="src\Textures\HelloWorldUI.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

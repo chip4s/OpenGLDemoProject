@@ -22,7 +22,7 @@ void Physics::HandleRigidBodies(EntityManager& entityManager, float dT)
 
 
 		
-		if (rigidBody.dynamic == true)
+		if (rigidBody.type == DYNAMIC)
 		{
 			//std::cout << glm::to_string(rigidBody.acceleration) << " is acceleration\n\n";
 			//std::cout << glm::to_string(rigidBody.velocity) << " is velocity\n\n";
@@ -202,31 +202,31 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 				if (posDifferrenceY > posDifferrenceX && posDifferrenceY > posDifferrenceZ)
 				{
 					//std::cout << "y collision\n";
-					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
+					if (rbOne.type == rbTwo.type) //collision between two moving objects/static objects
 					{
 						transformOne.position.y += yChange * 0.5f;
 						transformTwo.position.y += -yChange * 0.5f;
 					}
-					else if (rbOne.dynamic == true) //collision between one moving and one static object
+					else if (rbOne.type == DYNAMIC) //collision between one moving and one static object
 					{
 						transformOne.position.y += yChange;
 
 						rbOne.netForce.y = 0.0f;
 						rbOne.velocity.y = 0.0f;
 					}
-					else //one static and one moving (reversed)
+					else // collision between one static and one moving (reversed objects)
 					{
 						transformTwo.position.y += -yChange;
 					}
 				}
 				if (posDifferrenceX > posDifferrenceY && posDifferrenceX > posDifferrenceZ)
 				{
-					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
+					if (rbOne.type == rbTwo.type) //collision between two moving objects/static objects
 					{
 						transformOne.position.x += xChange * 0.5f;
 						transformTwo.position.x += -xChange * 0.5f;
 					}
-					else if (rbOne.dynamic == true) //collision between one moving and one static object
+					else if (rbOne.type == DYNAMIC) //collision between one moving and one static object
 					{
 						transformOne.position.x += xChange;
 					}
@@ -237,12 +237,12 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 				}
 				if (posDifferrenceZ > posDifferrenceX && posDifferrenceZ > posDifferrenceY)
 				{
-					if (rbOne.dynamic == rbTwo.dynamic) //collision between two moving objects/static objects
+					if (rbOne.type == rbTwo.type) //collision between two moving objects/static objects
 					{
 						transformOne.position.z += zChange * 0.5f;
 						transformTwo.position.z += -zChange * 0.5f;
 					}
-					else if (rbOne.dynamic == true)//collision between one moving and one static object
+					else if (rbOne.type == DYNAMIC)//collision between one moving and one static object
 					{
 						transformOne.position.z += zChange;
 					}

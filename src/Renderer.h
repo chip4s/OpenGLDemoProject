@@ -31,6 +31,9 @@ class Renderer
 		void ShaderErrors(unsigned int shader, const  char* type);
 
 		void Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager);//also sends uniforms of entity
+
+		void DrawUI(EntityManager& entityManager);
+
 		~Renderer();
 		
 		void HandlePointLights(glm::vec3 camPos, EntityManager& entityManager);
@@ -39,8 +42,12 @@ class Renderer
 
 		void HandleSpotLights(glm::vec3 camPos, EntityManager& entityManager);
 
+
+		//shader ID's
 		GLuint objShaderID = 0;
 		GLuint shadowShaderID = 0;
+		GLuint UIShaderID = 0;
+
 
 		//Omni-directional shadows
 		GLuint size;
