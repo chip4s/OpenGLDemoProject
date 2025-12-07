@@ -140,8 +140,8 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 			//check collision on all axis
 			if (collidingX && collidingY && collidingZ)
 			{
-				if (!allRigidBodies[i].dynamic)
-					continue;
+				//if (!allRigidBodies[i].dynamic || !allRigidBodies[j].dynamic)
+					//continue;
 
 				//Collision resolution
 
@@ -190,23 +190,57 @@ void Physics::CheckBoxCollisions(EntityManager& entityManager, float dT)
 				}
 
 				
-				float posDifferenceY = std::abs(transformOne.position.y - transformTwo.position.y);
-				float posDifferenceX = std::abs(transformOne.position.x - transformTwo.position.x);
-				float posDifferenceZ = std::abs(transformOne.position.z - transformTwo.position.z);
-				if (posDifferenceY > posDifferenceX && posDifferenceY > posDifferenceZ)
+				float posDifferrenceY = std::abs(transformOne.position.y - transformTwo.position.y) - boxColliderOne.height * 0.5f - boxColliderTwo.height * 0.5f;
+				float posDifferrenceX = std::abs(transformOne.position.x - transformTwo.position.x) - boxColliderOne.width * 0.5f - boxColliderTwo.width * 0.5f;
+				float posDifferrenceZ = std::abs(transformOne.position.z - transformTwo.position.z) - boxColliderOne.length * 0.5f - boxColliderTwo.length * 0.5f;
+				if (posDifferrenceY > posDifferrenceX && posDifferrenceY > posDifferrenceZ)
 				{
-					std::cout << "y collision\n";
-					transformOne.position.y += yChange;
+					//std::cout << "y collision\n";
+					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					{
+						transformOne.position.y += yChange * 0.5f;
+						transformTwo.position.y += -yChange * 0.5f;
+					}
+					else if (allRigidBodies[i].dynamic == true)
+					{
+						transformOne.position.y += yChange;
+					}
+					else
+					{
+						transformTwo.position.y += -yChange;
+					}
 				}
-				if (posDifferenceX > posDifferenceY && posDifferenceX > posDifferenceZ)
+				if (posDifferrenceX > posDifferrenceY && posDifferrenceX > posDifferrenceZ)
 				{
-					std::cout << "x collision\n";
-					transformOne.position.x += xChange;
+					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					{
+						transformOne.position.x += xChange * 0.5f;
+						transformTwo.position.x += -xChange * 0.5f;
+					}
+					else if (allRigidBodies[i].dynamic == true)
+					{
+						transformOne.position.x += xChange;
+					}
+					else
+					{
+						transformTwo.position.x += -xChange;
+					}
 				}
-				if (posDifferenceZ > posDifferenceX && posDifferenceZ > posDifferenceY)
+				if (posDifferrenceZ > posDifferrenceX && posDifferrenceZ > posDifferrenceY)
 				{
-					std::cout << "z collision\n";
-					transformOne.position.z += zChange;
+					if (allRigidBodies[i].dynamic == allRigidBodies[j].dynamic)
+					{
+						transformOne.position.z += zChange * 0.5f;
+						transformTwo.position.z += -zChange * 0.5f;
+					}
+					else if (allRigidBodies[i].dynamic == true)
+					{
+						transformOne.position.z += zChange;
+					}
+					else
+					{
+						transformTwo.position.z += -zChange;
+					}
 				}
 				//std::cout << std::abs(xChange) << " : xChange\n";
 				//std::cout << std::abs(yChange) << " : yChange\n";

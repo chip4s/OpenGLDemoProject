@@ -344,7 +344,7 @@ public:
 	float length = 0.0f;//z extents
 	CBoxCollider() {};
 	
-	CBoxCollider(int w, int h, int l)
+	CBoxCollider(float w, float h, float l)
 	{
 		width = w;
 		height = h;
@@ -355,6 +355,8 @@ public:
 class CRigidBody : public BaseComponent
 {
 public:
+	//statics push other statics and dynamics
+	//dynamics push other dynamics
 	bool dynamic = false;
 	CRigidBody() {};
 	CRigidBody(bool moves, float m) 
