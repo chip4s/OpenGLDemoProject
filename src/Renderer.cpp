@@ -224,87 +224,45 @@ void Renderer::HandleSpotLights(glm::vec3 camPos, EntityManager& entityManager)
 }
 
 
-void Renderer::CompileShaders()
+void Renderer::CompileShaders(const char* vertShader, const char* fragShader, GLuint& shaderID)
 {
 	//for object shaders
-	const char* vertexFileO = "objVertexShader.vert";
-	const char* fragmentFileO = "objFragmentShader.frag";
+	const char* vertexFile = vertShader;
+	const char* fragmentFile = fragShader;
 
-	std::string vertexCodeO = get_file_contents(vertexFileO);
-	std::string fragmentCodeO = get_file_contents(fragmentFileO);
+	std::string vertexCode = get_file_contents(vertexFile);
+	std::string fragmentCode = get_file_contents(fragmentFile);
 	//std::cout << vertexCodeO << "ov\n\n\n\n\n";
 	//std::cout << fragmentCodeO << "of\n\n\n\n\n";
 
-	const char* vertexSourceO = vertexCodeO.c_str();
-	const char* fragmentSourceO = fragmentCodeO.c_str();
+	const char* vertexSource = vertexCode.c_str();
+	const char* fragmentSource = fragmentCode.c_str();
 
 	//Compiles sourcecode and creates vertex shader
-	GLuint vertexShaderO = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShaderO, 1, &vertexSourceO, NULL);
-	glCompileShader(vertexShaderO);
-	ShaderErrors(vertexShaderO, "VERTEX");
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexSource, NULL);
+	glCompileShader(vertexShader);
+	ShaderErrors(vertexShader, "VERTEX");
+
 	//Same thing as above for fragment shader
-	GLuint fragmentShaderO = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShaderO, 1, &fragmentSourceO, NULL);
-	glCompileShader(fragmentShaderO);
-	ShaderErrors(fragmentShaderO, "FRAGMENT");
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+	glCompileShader(fragmentShader);
+	ShaderErrors(fragmentShader, "FRAGMENT");
 
 	//Creates the shader program(only one type of program)
-	objShaderID = glCreateProgram();
+	shaderID = glCreateProgram();
 	
 	//Attaches both shaders to shader program and links program
-	glAttachShader(objShaderID, vertexShaderO);
-	glAttachShader(objShaderID, fragmentShaderO);
-	glLinkProgram(objShaderID);
-	ShaderErrors(objShaderID, "PROGRAM");
-	//std::cout << glGetError() << "\n\n";
+	glAttachShader(shaderID, vertexShader);
+	glAttachShader(shaderID, fragmentShader);
+	glLinkProgram(shaderID);
+	ShaderErrors(shaderID, "PROGRAM");
+
 
 	//Deletes shaders after they are linked
-	glDeleteShader(vertexShaderO);
-	glDeleteShader(fragmentShaderO);
-	//std::cout << "object shaders compile and work\n";
-
-
-
-	//same for shadow shaders
-	//for object shaders
-	const char* vertexFileL = "Shadows.vert";
-	const char* fragmentFileL = "Shadows.frag";
-
-	std::string vertexCodeL = get_file_contents(vertexFileL);
-	std::string fragmentCodeL = get_file_contents(fragmentFileL);
-	//std::cout << vertexCodeO << "ov\n\n\n\n\n";
-	//std::cout << fragmentCodeO << "of\n\n\n\n\n";
-
-	const char* vertexSourceL = vertexCodeL.c_str();
-	const char* fragmentSourceL = fragmentCodeL.c_str();
-
-	//Compiles sourcecode and creates vertex shader
-	GLuint vertexShaderL = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShaderL, 1, &vertexSourceL, NULL);
-	glCompileShader(vertexShaderL);
-	ShaderErrors(vertexShaderL, "VERTEX");
-	//Same thing as above for fragment shader
-	GLuint fragmentShaderL = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShaderL, 1, &fragmentSourceL, NULL);
-	glCompileShader(fragmentShaderL);
-	ShaderErrors(fragmentShaderL, "FRAGMENT");
-
-	//Creates the shader program(only one type of program)
-	shadowShaderID = glCreateProgram();
-
-	//Attaches both shaders to shader program and links program
-	glAttachShader(shadowShaderID, vertexShaderL);
-	glAttachShader(shadowShaderID, fragmentShaderL);
-	glLinkProgram(shadowShaderID);
-	ShaderErrors(shadowShaderID, "PROGRAM");
-	//std::cout << glGetError() << "\n\n";
-
-	//Deletes shaders after they are linked
-	glDeleteShader(vertexShaderL);
-	glDeleteShader(fragmentShaderL);
-	//std::cout << "object shaders compile and work\n";
-	
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
 }
 
 void Renderer::ShaderErrors(unsigned int shader, const  char* type)

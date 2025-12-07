@@ -26,7 +26,8 @@ class Renderer
 	public:
 		Renderer();
 
-		void CompileShaders();
+		//stores shader id in third parameter
+		void CompileShaders(const char* vertShader, const char* fragShader, GLuint& shaderID);
 		void ShaderErrors(unsigned int shader, const  char* type);
 
 		void Draw(glm::mat4 proj, glm::mat4 view, EntityManager& entityManager);//also sends uniforms of entity
@@ -38,8 +39,8 @@ class Renderer
 
 		void HandleSpotLights(glm::vec3 camPos, EntityManager& entityManager);
 
-		GLuint objShaderID;
-		GLuint shadowShaderID;
+		GLuint objShaderID = 0;
+		GLuint shadowShaderID = 0;
 
 		//Omni-directional shadows
 		GLuint size;

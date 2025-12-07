@@ -99,7 +99,10 @@ void Application::run()
 	
 	CRigidBody& entityTwoRB = entityManager.GetComponentByEntity<CRigidBody>(entityTwo);
 
-	renderer.CompileShaders();
+
+
+	renderer.CompileShaders("objVertexShader.vert", "objFragmentShader.frag", renderer.objShaderID);
+	renderer.CompileShaders("Shadows.vert", "Shadows.frag", renderer.shadowShaderID);
 
 
 	//runs physics functions more/less () needs to be 1 or above
