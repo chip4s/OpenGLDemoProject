@@ -87,8 +87,7 @@ void Application::run()
 	entityManager.AddComponent<CMesh>(entityOne, CUBE);
 	entityManager.AddComponent<CTransform>(entityOne, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(10.0f, 1.0f, 10.0f));
 	entityManager.AddComponent<CBoxCollider>(entityOne, 10.0f, 1.0f, 10.0f);
-	entityManager.AddComponent<CRigidBody>(entityOne, STATIC, 1.0f, -40.0f);
-	entityManager.AddComponent<CDirectionalLight>(entityOne, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+	entityManager.AddComponent<CRigidBody>(entityOne, STATIC, 1.0f, -4.0f);
 
 
 
@@ -102,6 +101,14 @@ void Application::run()
 
 	Entity& entityThree = entityManager.AddEntity("default");
 	entityManager.AddComponent<CMesh>(entityThree, CUBE);
+	entityManager.AddComponent<CTransform>(entityThree, glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CBoxCollider>(entityThree, 10.0f, 1.0f, 10.0f);
+	entityManager.AddComponent<CRigidBody>(entityThree, DYNAMIC, 1.0f, -4.0f);
+
+
+	Entity& entityFour = entityManager.AddEntity("default");
+	entityManager.AddComponent<CTransform>(entityFour, glm::vec3(4.0f, 4.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	entityManager.AddComponent<CPointLight>(entityFour, glm::vec3(0.0f, 0.5f, 0.0f), 1.0f);
 
 
 
